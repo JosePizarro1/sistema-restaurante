@@ -28,6 +28,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Estilos Personalizados con Variables CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
@@ -42,18 +44,6 @@
         <main class="flex-1 flex flex-col overflow-hidden w-full">
             <!-- Header Reutilizable -->
             {% include 'includes/header.html' %}
-
-            <!-- Mensajes del Sistema -->
-            {% if messages %}
-                <div class="px-4 lg:px-8 pt-4">
-                    {% for message in messages %}
-                        <div class="p-4 mb-2 rounded-xl text-sm font-bold flex items-center justify-between {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
-                            <span>{{ message }}</span>
-                            <button onclick="this.parentElement.remove()" class="text-xs text-gray-500 hover:text-gray-700">✕</button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
 
             <!-- Bloque Dinámico de Contenido -->
             <div class="flex-1 overflow-y-auto custom-scrollbar">
@@ -90,6 +80,51 @@
             if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
             if (overlay) overlay.addEventListener('click', closeSidebar);
         });
+
+        // --- SweetAlert2 Toast Handler para Django Messages ---
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        {% if messages %}
+            {% for message in messages %}
+                Toast.fire({
+                    icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message|escapejs }}"
+                });
+            {% endfor %}
+        {% endif %}
+
+        // --- Helper global para confirmaciones SweetAlert2 ---
+        function confirmarAccion(url, titulo = '¿Estás seguro?', texto = 'Esta acción no se puede deshacer', icono = 'warning', botonConfirmar = 'Sí, continuar') {
+            Swal.fire({
+                title: titulo,
+                text: texto,
+                icon: icono,
+                showCancelButton: true,
+                confirmButtonColor: '#F56B45',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: botonConfirmar,
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl text-sm font-bold px-5 py-2.5',
+                    cancelButton: 'rounded-xl text-sm font-bold px-5 py-2.5'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Platos - RestoPOS{% endblock %}
+{% block breadcrumb %}Administración{% endblock %}
+{% block page_title %}Catálogo de Platos{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8">
+    <!-- Header de Gestión -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B]">Gestión del Menú</h2>
+            <p class="text-xs text-gray-400">Agrega, edita o deshabilita los platos disponibles en el POS</p>
+        </div>
+        <a href="{% url 'plato_create' %}" class="btn-primary-custom px-5 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-2 no-underline">
+            <i class="ti ti-plus text-lg"></i>
+            <span>Nuevo Plato</span>
+        </a>
+    </div>
+
+    <!-- Lista de Platos en Grid Responsive -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for plato in platos %}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all">
+            <div>
+                <!-- Imagen -->
+                <div class="relative h-40 bg-gray-50 overflow-hidden">
+                    {% if plato.imagen_base64 %}
+                        <img src="{{ plato.imagen_base64 }}" alt="{{ plato.nombre }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    {% else %}
+                        <div class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                            <i class="ti ti-photo text-4xl"></i>
+                            <span class="text-[10px] font-bold mt-1">Sin imagen</span>
+                        </div>
+                    {% endif %}
+                    <!-- Badge de Estado -->
+                    <div class="absolute top-3 right-3">
+                        {% if plato.activo %}
+                            <span class="px-2.5 py-1 bg-green-500/90 backdrop-blur-xs text-white text-[10px] font-bold rounded-full shadow-xs">Activo</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 bg-gray-500/90 backdrop-blur-xs text-white text-[10px] font-bold rounded-full shadow-xs">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="p-5">
+                    <h3 class="font-['Outfit'] font-bold text-lg text-[#15202B] mb-1 line-clamp-1">{{ plato.nombre }}</h3>
+                    <span class="text-xl font-bold text-primary-custom font-['Outfit']">S/ {{ plato.precio|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 gap-2">
+                <a href="{% url 'plato_edit' plato.id %}" class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors no-underline">
+                    <i class="ti ti-edit text-base"></i>
+                    <span>Editar</span>
+                </a>
+                
+                <a href="{% url 'plato_toggle_status' plato.id %}" class="p-2 {% if plato.activo %}bg-amber-50 text-amber-600 hover:bg-amber-100{% else %}bg-green-50 text-green-600 hover:bg-green-100{% endif %} rounded-xl font-bold text-xs transition-colors no-underline" title="{% if plato.activo %}Desactivar{% else %}Activar{% endif %}">
+                    <i class="ti {% if plato.activo %}ti-eye-off{% else %}ti-eye{% endif %} text-base"></i>
+                </a>
+
+                <button onclick="confirmarAccion('{% url \'plato_delete\' plato.id %}', '¿Eliminar {{ plato.nombre|escapejs }}?', 'El plato dejará de estar disponible en el sistema.', 'warning', 'Sí, eliminar')" class="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-xs transition-colors cursor-pointer" title="Eliminar plato">
+                    <i class="ti ti-trash text-base"></i>
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-gray-100">
+            <div class="w-16 h-16 bg-primary-light text-primary-custom rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i class="ti ti-tools-kitchen-2 text-3xl"></i>
+            </div>
+            <h3 class="font-['Outfit'] font-bold text-lg text-[#15202B]">No hay platos registrados</h3>
+            <p class="text-xs text-gray-400 mt-1 mb-4">Comienza registrando los platos que ofrecerás en tu menú.</p>
+            <a href="{% url 'plato_create' %}" class="btn-primary-custom px-5 py-2.5 rounded-xl font-bold text-xs inline-flex items-center gap-2 no-underline">
+                <i class="ti ti-plus"></i>
+                <span>Crear Primer Plato</span>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -11,4 +11,12 @@ urlpatterns = [
     path('pos/cobrar/<int:orden_id>/', views.cobrar_orden, name='cobrar_orden'),
     path('cocina/', views.cocina_view, name='cocina'),
     path('cocina/estado/<int:orden_id>/<str:nuevo_estado>/', views.cambiar_estado_orden, name='cambiar_estado'),
+    
+    # CRUD Platos (Superusuario)
+    path('platos/', views.platos_list_view, name='platos_list'),
+    path('platos/nuevo/', views.plato_create_view, name='plato_create'),
+    path('platos/editar/<int:plato_id>/', views.plato_edit_view, name='plato_edit'),
+    path('platos/toggle/<int:plato_id>/', views.plato_toggle_status_view, name='plato_toggle_status'),
+    path('platos/eliminar/<int:plato_id>/', views.plato_delete_view, name='plato_delete'),
 ]
+

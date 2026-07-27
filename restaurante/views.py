@@ -1,11 +1,32 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.db.models import Sum
 from django.utils import timezone
 from .models import Plato, Orden, DetalleOrden
 import json
+import io
+import base64
+from PIL import Image
+
+def superuser_required(view_func):
+    decorator = user_passes_test(
+        lambda u: u.is_authenticated and u.is_superuser,
+        login_url='/login/'
+    )
+    return decorator(view_func)
+
+def process_image_to_base64(imagen_file):
+    img = Image.open(imagen_file)
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    img.thumbnail((400, 300), Image.LANCZOS)
+    buffer = io.BytesIO()
+    img.save(buffer, format='JPEG', quality=70, optimize=True)
+    buffer.seek(0)
+    encoded = base64.b64encode(buffer.read()).decode('utf-8')
+    return f"data:image/jpeg;base64,{encoded}"
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
@@ -25,7 +46,6 @@ def pos_view(request):
             messages.error(request, 'La orden no puede estar vacía.')
             return redirect('pos')
 
-        # Se envía a cocina sin método de pago aún
         orden = Orden.objects.create(metodo_pago='PENDIENTE', estado='PENDIENTE')
         total = 0
 
@@ -103,3 +123,94 @@ def reportes_view(request):
         'platos_mas_vendidos': platos_mas_vendidos,
     }
     return render(request, 'reportes.html', context)
+
+
+# ==========================================
+# MÓDULO CRUD DE PLATOS (SOLO SUPERUSUARIOS)
+# ==========================================
+
+@superuser_required
+def platos_list_view(request):
+    platos = Plato.objects.all().order_by('-activo', 'nombre')
+    return render(request, 'platos/lista.html', {'platos': platos})
+
+@superuser_required
+def plato_create_view(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        precio = request.POST.get('precio', '0').strip()
+        activo = request.POST.get('activo') == 'on'
+        imagen_file = request.FILES.get('imagen')
+
+        if not nombre or not precio:
+            messages.error(request, 'El nombre y el precio son requeridos.')
+            return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+
+        plato = Plato(nombre=nombre, precio=precio, activo=activo)
+
+        if imagen_file:
+            try:
+                plato.imagen_base64 = process_image_to_base64(imagen_file)
+            except Exception as e:
+                messages.error(request, f'Error al procesar la imagen: {e}')
+                return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+
+        plato.save()
+        messages.success(request, f'¡Plato "{plato.nombre}" creado exitosamente!')
+        return redirect('platos_list')
+
+    return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+
+@superuser_required
+def plato_edit_view(request, plato_id):
+    plato = get_object_or_404(Plato, id=plato_id)
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        precio = request.POST.get('precio', '0').strip()
+        activo = request.POST.get('activo') == 'on'
+        imagen_file = request.FILES.get('imagen')
+
+        if not nombre or not precio:
+            messages.error(request, 'El nombre y el precio son requeridos.')
+            return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+
+        plato.nombre = nombre
+        plato.precio = precio
+        plato.activo = activo
+
+        if imagen_file:
+            try:
+                plato.imagen_base64 = process_image_to_base64(imagen_file)
+            except Exception as e:
+                messages.error(request, f'Error al procesar la imagen: {e}')
+                return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+
+        plato.save()
+        messages.success(request, f'¡Plato "{plato.nombre}" actualizado exitosamente!')
+        return redirect('platos_list')
+
+    return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+
+@superuser_required
+def plato_toggle_status_view(request, plato_id):
+    plato = get_object_or_404(Plato, id=plato_id)
+    plato.activo = not plato.activo
+    plato.save()
+    estado_str = "activado" if plato.activo else "desactivado"
+    messages.success(request, f'Plato "{plato.nombre}" {estado_str}.')
+    return redirect('platos_list')
+
+@superuser_required
+def plato_delete_view(request, plato_id):
+    plato = get_object_or_404(Plato, id=plato_id)
+    nombre = plato.nombre
+    try:
+        plato.delete()
+        messages.success(request, f'Plato "{nombre}" eliminado.')
+    except Exception:
+        # Si tiene órdenes asociadas
+        plato.activo = False
+        plato.save()
+        messages.warning(request, f'El plato "{nombre}" tiene historial de ventas, por lo que fue desactivado en lugar de eliminado.')
+    return redirect('platos_list')
+

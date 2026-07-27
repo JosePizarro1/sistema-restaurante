@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - RestoPOS{% endblock %}
+{% block breadcrumb %}Administración / Platos{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">
+            <h2 class="text-xl font-['Outfit'] font-bold text-[#15202B]">{{ titulo }}</h2>
+            <a href="{% url 'platos_list' %}" class="text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 no-underline">
+                <i class="ti ti-arrow-left text-base"></i>
+                <span>Volver a la lista</span>
+            </a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Nombre del Plato -->
+            <div>
+                <label for="nombre" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Nombre del Plato *</label>
+                <input type="text" id="nombre" name="nombre" value="{{ plato.nombre|default:'' }}" required placeholder="Ej: Ceviche Mixto" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm">
+            </div>
+
+            <!-- Precio -->
+            <div>
+                <label for="precio" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Precio (S/) *</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">S/</span>
+                    <input type="number" step="0.50" min="0" id="precio" name="precio" value="{{ plato.precio|default:'' }}" required placeholder="0.00" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm">
+                </div>
+            </div>
+
+            <!-- Imagen del Plato -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Imagen del Plato (Opcional)</label>
+                
+                <!-- Preview actual si existe -->
+                <div class="mb-3 flex items-center gap-4">
+                    <div id="image-preview-container" class="w-24 h-24 rounded-2xl bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center">
+                        {% if plato.imagen_base64 %}
+                            <img id="image-preview" src="{{ plato.imagen_base64 }}" alt="Preview" class="w-full h-full object-cover">
+                        {% else %}
+                            <img id="image-preview" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                            <i id="image-placeholder-icon" class="ti ti-photo text-3xl text-gray-300"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 text-xs text-gray-400">
+                        <p class="font-bold text-gray-600">Recomendación:</p>
+                        <p>Formatos JPG, PNG o WEBP. Se redimensionará y comprimirá automáticamente con Pillow para un rendimiento óptimo.</p>
+                    </div>
+                </div>
+
+                <input type="file" id="imagen" name="imagen" accept="image/*" onchange="previewSelectedImage(event)" class="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary-light file:text-primary-custom hover:file:bg-primary-custom hover:file:text-white file:transition-all file:cursor-pointer cursor-pointer">
+            </div>
+
+            <!-- Estado Activo -->
+            <div class="flex items-center gap-3 pt-2">
+                <input type="checkbox" id="activo" name="activo" {% if plato %}{% if plato.activo %}checked{% endif %}{% else %}checked{% endif %} class="w-5 h-5 accent-primary-custom rounded-lg cursor-pointer">
+                <label for="activo" class="text-sm font-bold text-[#15202B] cursor-pointer">Disponible inmediatamente en la carta (POS)</label>
+            </div>
+
+            <!-- Botones -->
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <a href="{% url 'platos_list' %}" class="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 transition-colors no-underline">Cancelar</a>
+                <button type="submit" class="btn-primary-custom px-6 py-3 rounded-xl font-bold text-xs shadow-md cursor-pointer">Guardar Plato</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewSelectedImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('image-preview');
+    const placeholder = document.getElementById('image-placeholder-icon');
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+</script>
+{% endblock %}

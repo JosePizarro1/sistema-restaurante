@@ -33,13 +33,23 @@
             </span>
         </a>
         <a class="nav-item flex lg:flex-col items-center gap-3 lg:gap-1 p-3 lg:p-0 rounded-xl group text-decoration-none transition-all" href="{% url 'reportes' %}">
-            <div class="w-10 h-10 lg:w-14 lg:h-14 {% if request.resolver_match.url_name == 'reportes' %}bg-primary-custom text-white shadow-lg shadow-[#F56B45]/20{% else %}text-gray-400 group-hover:bg-gray-50{% endif %} rounded-xl lg:rounded-[18px] flex items-center justify-center transition-all">
+            <div class="w-10 h-10 lg:w-14 lg:h-14 {% if request.resolver_match.url_name == 'reportes' or request.resolver_match.url_name == 'reportes_alias' %}bg-primary-custom text-white shadow-lg shadow-[#F56B45]/20{% else %}text-gray-400 group-hover:bg-gray-50{% endif %} rounded-xl lg:rounded-[18px] flex items-center justify-center transition-all">
                 <i class="ti ti-chart-bar text-xl lg:text-2xl"></i>
             </div>
-            <span class="text-sm lg:text-[10px] font-bold uppercase tracking-wider {% if request.resolver_match.url_name == 'reportes' %}text-primary-custom{% else %}text-gray-500 group-hover:text-gray-700{% endif %}">
+            <span class="text-sm lg:text-[10px] font-bold uppercase tracking-wider {% if request.resolver_match.url_name == 'reportes' or request.resolver_match.url_name == 'reportes_alias' %}text-primary-custom{% else %}text-gray-500 group-hover:text-gray-700{% endif %}">
                 Reportes
             </span>
         </a>
+        {% if user.is_superuser %}
+        <a class="nav-item flex lg:flex-col items-center gap-3 lg:gap-1 p-3 lg:p-0 rounded-xl group text-decoration-none transition-all" href="{% url 'platos_list' %}">
+            <div class="w-10 h-10 lg:w-14 lg:h-14 {% if 'plato' in request.resolver_match.url_name %}bg-primary-custom text-white shadow-lg shadow-[#F56B45]/20{% else %}text-gray-400 group-hover:bg-gray-50{% endif %} rounded-xl lg:rounded-[18px] flex items-center justify-center transition-all">
+                <i class="ti ti-[#F56B45] ti-chef-hat text-xl lg:text-2xl"></i>
+            </div>
+            <span class="text-sm lg:text-[10px] font-bold uppercase tracking-wider {% if 'plato' in request.resolver_match.url_name %}text-primary-custom{% else %}text-gray-500 group-hover:text-gray-700{% endif %}">
+                Platos
+            </span>
+        </a>
+        {% endif %}
     </nav>
 
     <!-- Logout -->
