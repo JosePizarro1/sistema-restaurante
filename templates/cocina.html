@@ -212,8 +212,9 @@
 
     updateAudioUI();
 
-    // --- AJAX Polling Inteligente (Sin Recargar la Página) ---
+    // --- AJAX Polling Inteligente (Sin Parpadeo de DOM) ---
     let knownOrderIds = new Set(Array.from(document.querySelectorAll('[data-orden-id]')).map(el => parseInt(el.dataset.ordenId)));
+    let lastOrdersSignature = "";
 
     function fetchCocinaOrdenes() {
         fetch('/api/cocina-ordenes/')
@@ -221,7 +222,7 @@
             .then(data => {
                 const grid = document.getElementById('comandas-grid');
                 const newOrders = data.ordenes || [];
-                const newIds = new Set(newOrders.map(o => o.id));
+                const currentSignature = JSON.stringify(newOrders.map(o => ({ id: o.id, tipo: o.tipo_servicio, nota: o.nota_general, detCount: o.detalles.length })));
 
                 // 1. Detectar si ingresó alguna comanda nueva para sonar el timbre
                 let hayNuevaOrden = false;
@@ -233,9 +234,15 @@
                     playKitchenChime();
                 }
 
-                knownOrderIds = newIds;
+                knownOrderIds = new Set(newOrders.map(o => o.id));
 
-                // 2. Si no hay comandas
+                // 2. Si la información no ha cambiado, NO tocar el DOM (Cero parpadeo)
+                if (currentSignature === lastOrdersSignature) {
+                    return;
+                }
+                lastOrdersSignature = currentSignature;
+
+                // 3. Si no hay comandas
                 if (newOrders.length === 0) {
                     grid.innerHTML = `
                         <div class="col-span-1 sm:col-span-2 xl:col-span-3 text-center py-20 bg-white rounded-2xl border border-gray-100">
