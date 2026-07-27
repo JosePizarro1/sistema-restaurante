@@ -334,7 +334,14 @@
         if (item) {
             item.cantidad += 1;
         } else {
-            carrito.push({ id: id, nombre: nombre, precio: parseFloat(precio), cantidad: 1, nota: '' });
+            carrito.push({ 
+                id: id, 
+                nombre: nombre, 
+                precio: parseFloat(precio), 
+                cantidad: 1, 
+                nota: '',
+                es_para_llevar: (tipoServicioActual === 'LLEVAR')
+            });
         }
         renderCarrito();
         // Feedback visual: bounce en el FAB
@@ -364,6 +371,15 @@
         }
     }
 
+    function toggleLlevarItem(id) {
+        let item = carrito.find(i => i.id === id);
+        if (item) {
+            item.es_para_llevar = !item.es_para_llevar;
+            renderCarrito();
+            renderCarritoMobile();
+        }
+    }
+
     function buildItemsHTML(container, targetFn) {
         let total = 0;
         if (carrito.length === 0) {
@@ -379,11 +395,21 @@
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal;
                 const notaEscaped = (item.nota || '').replace(/"/g, '&quot;');
+                const esLlevar = item.es_para_llevar;
                 container.innerHTML += `
                     <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
                         <div class="flex items-center justify-between">
                             <div class="flex-1 pr-2">
-                                <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
+                                    <!-- Toggle por plato Llevar vs Mesa -->
+                                    <button type="button" 
+                                            onclick="toggleLlevarItem(${item.id})" 
+                                            class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${esLlevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}"
+                                            title="Cambiar entre Mesa o Para Llevar este plato">
+                                        ${esLlevar ? '🥡 Llevar' : '🍽️ Mesa'}
+                                    </button>
+                                </div>
                                 <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
                             </div>
                             <div class="flex items-center gap-2">

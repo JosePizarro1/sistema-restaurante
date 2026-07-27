@@ -63,9 +63,16 @@
                 {% for detalle in orden.detalles.all %}
                 <div class="py-2.5 border-b border-gray-100 last:border-0">
                     <div class="flex items-center justify-between">
-                        <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
-                            {{ detalle.plato.nombre }}
-                        </span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
+                                {{ detalle.plato.nombre }}
+                            </span>
+                            {% if detalle.es_para_llevar %}
+                            <span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                <i class="ti ti-shopping-bag text-xs"></i> LLEVAR
+                            </span>
+                            {% endif %}
+                        </div>
                         <span class="ml-3 flex-shrink-0 w-10 h-10 bg-primary-light text-primary-custom font-bold text-lg flex items-center justify-center rounded-xl">
                             ×{{ detalle.cantidad }}
                         </span>

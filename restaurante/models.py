@@ -49,6 +49,7 @@ class DetalleOrden(models.Model):
     cantidad = models.PositiveIntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
     nota = models.CharField(max_length=255, blank=True, default='')
+    es_para_llevar = models.BooleanField(default=False)
 
     def subtotal(self):
         return self.cantidad * self.precio_unitario
