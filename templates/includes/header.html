@@ -1,0 +1,28 @@
+<!-- Header Superior -->
+<header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0 z-10">
+    <div class="flex flex-col">
+        <nav class="text-[11px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 mb-1">
+            <span>Operación</span>
+            <i class="ti ti-chevron-right text-[10px]"></i>
+            <span class="text-gray-600">{% block breadcrumb %}Sección{% endblock %}</span>
+        </nav>
+        <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-['Outfit'] font-bold mb-0">{% block page_title %}Sistema Restaurante{% endblock %}</h1>
+            <span class="px-2.5 py-1 bg-green-50 text-green-600 text-[10px] font-bold uppercase tracking-wide rounded-full border border-green-100 flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Servicio activo
+            </span>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <div class="bg-gray-50 px-4 py-2 rounded-xl border border-gray-100 flex items-center gap-3">
+            <div class="w-8 h-8 bg-white rounded-lg shadow-xs flex items-center justify-center text-primary-custom font-bold">
+                <i class="ti ti-user"></i>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-xs font-bold">{{ user.username|capfirst }}</span>
+                <span class="text-[10px] text-gray-400">Usuario activo</span>
+            </div>
+        </div>
+    </div>
+</header>

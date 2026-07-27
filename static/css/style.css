@@ -1,0 +1,57 @@
+:root {
+    --primary-color: #F56B45;
+    --primary-hover: #E45B36;
+    --primary-light: rgba(245, 107, 69, 0.1);
+    --bg-main: #F7F8FA;
+    --text-dark: #15202B;
+    --text-muted: #8899A6;
+    --border-color: #E1E8ED;
+    --sidebar-width: 88px;
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Atkinson Hyperlegible', sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+}
+
+.text-primary-custom { color: var(--primary-color) !important; }
+.bg-primary-custom { background-color: var(--primary-color) !important; }
+.bg-primary-light { background-color: var(--primary-light) !important; }
+.btn-primary-custom {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+.btn-primary-custom:hover {
+    background-color: var(--primary-hover);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(245, 107, 69, 0.25);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}

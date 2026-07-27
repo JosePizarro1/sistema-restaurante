@@ -1,63 +1,56 @@
 {% extends 'base.html' %}
 
-{% block title %}Reporte del Día - RestoPOS{% endblock %}
+{% block title %}Reportes - RestoPOS{% endblock %}
+{% block breadcrumb %}Estadísticas del Negocio{% endblock %}
+{% block page_title %}Reportes y Métricas del Día{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-graph-up-arrow text-primary"></i> Reporte de Ventas del Día ({{ fecha|date:"d/m/Y" }})</h2>
-</div>
-
-<!-- Tarjetas Resumen -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card p-3 bg-primary text-white text-center">
-            <span class="small text-uppercase">Ventas Totales</span>
-            <h2 class="mb-0 font-weight-bold">S/. {{ total_ventas|floatformat:2 }}</h2>
+<div class="p-8 space-y-8">
+    <!-- Fila de Tarjetas de Totales -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Vendido Hoy</span>
+            <h3 class="text-3xl font-['Outfit'] font-bold text-primary-custom mt-2 mb-0">S/ {{ total_ventas|floatformat:2 }}</h3>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 bg-success text-white text-center">
-            <span class="small text-uppercase">💵 Efectivo</span>
-            <h3 class="mb-0">S/. {{ ventas_efectivo|floatformat:2 }}</h3>
+        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">💵 Ingreso Efectivo</span>
+            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_efectivo|floatformat:2 }}</h3>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 bg-info text-white text-center">
-            <span class="small text-uppercase">📱 Yape / Plin</span>
-            <h3 class="mb-0">S/. {{ ventas_yape|floatformat:2 }}</h3>
+        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📱 Ingreso Yape / Plin</span>
+            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_yape|floatformat:2 }}</h3>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card p-3 bg-secondary text-white text-center">
-            <span class="small text-uppercase">🏦 Transferencias</span>
-            <h3 class="mb-0">S/. {{ ventas_transferencia|floatformat:2 }}</h3>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Gráficos de Ventas -->
-    <div class="col-md-6 mb-4">
-        <div class="card p-3 h-100">
-            <h5 class="card-title text-center mb-3">Distribución por Método de Pago</h5>
-            <canvas id="graficoPagos"></canvas>
+        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🏦 Transferencias</span>
+            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_transferencia|floatformat:2 }}</h3>
         </div>
     </div>
 
-    <!-- Platos más Vendidos -->
-    <div class="col-md-6 mb-4">
-        <div class="card p-3 h-100">
-            <h5 class="card-title mb-3">Platos Más Vendidos Hoy</h5>
-            <ul class="list-group list-group-flush">
+    <!-- Gráfico y Platos más vendidos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+            <h4 class="text-base font-['Outfit'] font-bold mb-4">Ingresos por Tipo de Pago</h4>
+            <div class="h-64 flex items-center justify-center">
+                <canvas id="graficoPagos"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+            <h4 class="text-base font-['Outfit'] font-bold mb-4">Top Platos Vendidos Hoy</h4>
+            <div class="divide-y divide-gray-50">
                 {% for plato in platos_mas_vendidos %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{{ plato.plato__nombre }}</span>
-                    <span class="badge bg-success rounded-pill fs-6">{{ plato.total_cantidad }} unidades</span>
-                </li>
+                <div class="py-3 flex justify-between items-center">
+                    <span class="text-sm font-bold text-[#15202B]">{{ plato.plato__nombre }}</span>
+                    <span class="px-3 py-1 bg-primary-light text-primary-custom rounded-lg text-xs font-bold">
+                        {{ plato.total_cantidad }} unidades
+                    </span>
+                </div>
                 {% empty %}
-                <li class="list-group-item text-muted">No se registran ventas listas el día de hoy.</li>
+                <div class="py-8 text-center text-gray-400 text-xs">
+                    Sin ventas registradas el día de hoy.
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -73,11 +66,12 @@
             labels: ['Efectivo', 'Yape / Plin', 'Transferencia'],
             datasets: [{
                 data: [{{ ventas_efectivo }}, {{ ventas_yape }}, {{ ventas_transferencia }}],
-                backgroundColor: ['#198754', '#0dcaf0', '#6c757d']
+                backgroundColor: ['#10B981', '#F56B45', '#6366F1']
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom' }
             }
