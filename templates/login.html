@@ -3,46 +3,45 @@
 {% block title %}Login - mesa{% endblock %}
 
 {% block login_content %}
-<div class="flex w-full h-screen overflow-hidden font-['Atkinson_Hyperlegible'] text-[#15202B]">
-    <!-- Left Section: Branding and Message -->
-    <section class="relative w-[42%] bg-[#F56B45] flex flex-col justify-between p-16 text-white overflow-hidden shrink-0">
+<div class="flex flex-col lg:flex-row w-full min-h-screen font-['Atkinson_Hyperlegible'] text-[#15202B]">
+    <!-- Left Section: Branding and Message (Oculto en pantallas pequeñas o en formato banner arriba) -->
+    <section class="relative w-full lg:w-[42%] bg-[#F56B45] flex flex-col justify-between p-8 lg:p-16 text-white overflow-hidden shrink-0">
         <!-- Decorative Shapes -->
         <div class="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-black/5 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/3 -right-12 w-48 h-48 border-8 border-white/5 rounded-[48px] rotate-12"></div>
-        <div class="absolute top-1/2 left-0 w-24 h-24 border-2 border-white/10 rounded-full -translate-x-12"></div>
+        <div class="absolute top-1/3 -right-12 w-48 h-48 border-8 border-white/5 rounded-[48px] rotate-12 hidden lg:block"></div>
         
         <div class="relative z-10">
             <!-- Logo Container -->
-            <div class="animate-left-brand flex items-center gap-4 mb-20">
-                <div class="w-16 h-16 bg-white rounded-[20px] flex items-center justify-center shadow-xl shadow-black/5">
-                    <i class="ti ti-tools-kitchen-2 text-[#F56B45] text-3xl"></i>
+            <div class="animate-left-brand flex items-center gap-4 mb-8 lg:mb-20">
+                <div class="w-12 h-12 lg:w-16 lg:h-16 bg-white rounded-2xl lg:rounded-[20px] flex items-center justify-center shadow-xl shadow-black/5">
+                    <i class="ti ti-tools-kitchen-2 text-[#F56B45] text-2xl lg:text-3xl"></i>
                 </div>
-                <span class="font-['Outfit'] font-bold text-4xl tracking-tight">mesa</span>
+                <span class="font-['Outfit'] font-bold text-3xl lg:text-4xl tracking-tight">mesa</span>
             </div>
             <!-- Content Text -->
             <div class="max-w-md">
-                <h1 class="animate-left-title font-['Outfit'] font-bold text-5xl leading-[1.08] mb-6">
+                <h1 class="animate-left-title font-['Outfit'] font-bold text-3xl lg:text-5xl leading-[1.08] mb-4 lg:mb-6">
                     Que el servicio siga fluyendo.
                 </h1>
-                <p class="animate-left-subtitle text-lg text-white/80 leading-relaxed font-normal">
+                <p class="animate-left-subtitle text-sm lg:text-lg text-white/80 leading-relaxed font-normal hidden sm:block">
                     Todo lo que tu equipo necesita para recibir, preparar y entregar pedidos sin perder el ritmo.
                 </p>
             </div>
         </div>
 
         <!-- Footer Info Block -->
-        <div class="animate-left-status relative z-10 flex items-center justify-between bg-black/10 backdrop-blur-xl border border-white/10 p-4 rounded-[22px] max-w-sm">
+        <div class="animate-left-status relative z-10 hidden sm:flex items-center justify-between bg-black/10 backdrop-blur-xl border border-white/10 p-4 rounded-[22px] max-w-sm mt-6 lg:mt-0">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                    <i class="ti ti-tools-kitchen-2 text-2xl text-white"></i>
+                <div class="w-10 h-10 lg:w-12 lg:h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                    <i class="ti ti-tools-kitchen-2 text-xl lg:text-2xl text-white"></i>
                 </div>
                 <div>
                     <div class="flex items-center gap-2 mb-0.5">
                         <span class="w-2.5 h-2.5 bg-[#4ADE80] rounded-full shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
                         <span class="text-[11px] font-bold uppercase tracking-wider text-white">Servicio activo</span>
                     </div>
-                    <span class="text-sm text-white/60">Hoy · En línea</span>
+                    <span class="text-xs lg:text-sm text-white/60">Hoy · En línea</span>
                 </div>
             </div>
             <div class="px-2">
@@ -52,24 +51,24 @@
     </section>
 
     <!-- Right Section: Login Form -->
-    <section class="flex-1 bg-white flex flex-col items-center justify-center p-12 relative overflow-hidden">
+    <section class="flex-1 bg-white flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden min-h-[500px]">
         <!-- Background pattern -->
         <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#15202B 1px, transparent 0); background-size: 40px 40px;"></div>
         
         <!-- Badge -->
-        <div class="animate-badge mb-8 flex items-center gap-2 px-5 py-2 bg-[#F7F8FA] border border-[#F0F1F3] rounded-full text-[11px] font-bold uppercase tracking-[0.15em] text-[#15202B]/50 shadow-xs">
+        <div class="animate-badge mb-6 sm:mb-8 flex items-center gap-2 px-4 py-1.5 bg-[#F7F8FA] border border-[#F0F1F3] rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] text-[#15202B]/50 shadow-xs">
             <span class="w-2 h-2 bg-[#F56B45] rounded-full"></span>
             Panel operativo
         </div>
 
         <!-- Login Card -->
         <div class="animate-card w-full max-w-[420px] bg-white relative z-10">
-            <div class="mb-8 text-center">
-                <h2 class="font-['Outfit'] font-bold text-4xl mb-2 text-[#15202B]">Bienvenido de vuelta</h2>
-                <p class="text-gray-400 text-base">Ingresa tus datos para continuar.</p>
+            <div class="mb-6 sm:mb-8 text-center">
+                <h2 class="font-['Outfit'] font-bold text-3xl sm:text-4xl mb-2 text-[#15202B]">Bienvenido de vuelta</h2>
+                <p class="text-gray-400 text-sm sm:text-base">Ingresa tus datos para continuar.</p>
             </div>
 
-            <form method="post" class="space-y-5">
+            <form method="post" class="space-y-4 sm:space-y-5">
                 {% csrf_token %}
                 {% if form.errors %}
                     <div class="p-4 bg-red-50 border border-red-100 rounded-xl text-xs font-bold text-red-600">
@@ -79,40 +78,40 @@
 
                 <!-- Username/Email Field -->
                 <div class="animate-form-group">
-                    <label class="block text-[13px] font-bold mb-2 text-[#15202B]/60 uppercase tracking-wider" for="username">
+                    <label class="block text-[12px] sm:text-[13px] font-bold mb-2 text-[#15202B]/60 uppercase tracking-wider" for="username">
                         Usuario
                     </label>
                     <div class="relative">
                         <i class="ti ti-mail absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none"></i>
-                        <input class="login-input w-full h-14 pl-14 pr-6 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300" id="username" name="username" placeholder="admin" type="text" required autofocus />
+                        <input class="login-input w-full h-12 sm:h-14 pl-14 pr-6 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300 text-sm sm:text-base" id="username" name="username" placeholder="admin" type="text" required autofocus />
                     </div>
                 </div>
 
                 <!-- Password Field -->
                 <div class="animate-form-group">
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block text-[13px] font-bold text-[#15202B]/60 uppercase tracking-wider" for="password">
+                        <label class="block text-[12px] sm:text-[13px] font-bold text-[#15202B]/60 uppercase tracking-wider" for="password">
                             Contraseña
                         </label>
                     </div>
                     <div class="relative">
                         <i class="ti ti-lock absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none"></i>
-                        <input class="login-input w-full h-14 pl-14 pr-14 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300" id="password" name="password" placeholder="••••••••" type="password" required />
+                        <input class="login-input w-full h-12 sm:h-14 pl-14 pr-14 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300 text-sm sm:text-base" id="password" name="password" placeholder="••••••••" type="password" required />
                     </div>
                 </div>
 
                 <!-- Login Button -->
                 <div class="animate-form-group pt-2">
-                    <button type="submit" class="login-button-primary w-full h-14 bg-[#F56B45] text-white rounded-[20px] font-bold text-base shadow-lg shadow-[#F56B45]/20 hover:bg-[#e45b36] cursor-pointer flex items-center justify-center gap-2 group">
+                    <button type="submit" class="login-button-primary w-full h-12 sm:h-14 bg-[#F56B45] text-white rounded-[20px] font-bold text-sm sm:text-base shadow-lg shadow-[#F56B45]/20 hover:bg-[#e45b36] cursor-pointer flex items-center justify-center gap-2 group">
                         <span>Iniciar sesión</span>
-                        <i class="ti ti-arrow-right text-xl transition-transform group-hover:translate-x-1"></i>
+                        <i class="ti ti-arrow-right text-lg sm:text-xl transition-transform group-hover:translate-x-1"></i>
                     </button>
                 </div>
             </form>
 
             <!-- Footer Info -->
-            <div class="animate-footer mt-10 flex flex-col items-center gap-4">
-                <div class="flex items-center gap-2.5 px-5 py-2.5 bg-[#4ADE80]/10 border border-[#4ADE80]/20 rounded-full text-[10px] font-bold text-green-600 uppercase tracking-widest">
+            <div class="animate-footer mt-8 sm:mt-10 flex flex-col items-center gap-4">
+                <div class="flex items-center gap-2.5 px-4 py-2 bg-[#4ADE80]/10 border border-[#4ADE80]/20 rounded-full text-[10px] font-bold text-green-600 uppercase tracking-widest">
                     <i class="ti ti-shield-check text-base"></i>
                     Acceso encriptado y seguro
                 </div>

@@ -5,25 +5,25 @@
 {% block page_title %}Menú de Platos{% endblock %}
 
 {% block content %}
-<div class="flex h-full w-full overflow-hidden">
+<div class="flex flex-col lg:flex-row h-full w-full overflow-hidden">
     <!-- Sección de Menú y Platos -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
         <div class="max-w-4xl mx-auto">
-            <!-- Grid de Platos -->
-            <div class="grid grid-cols-2 gap-6 pb-12">
+            <!-- Grid de Platos (Responsive: 1 col en móviles, 2 en tablets/desktops) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 pb-12">
                 {% for plato in platos %}
-                <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col justify-between p-6">
+                <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col justify-between p-5 lg:p-6">
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-['Outfit'] font-bold text-lg leading-tight">{{ plato.nombre }}</h3>
+                            <h3 class="font-['Outfit'] font-bold text-base lg:text-lg leading-tight">{{ plato.nombre }}</h3>
                             <span class="px-2.5 py-1 bg-primary-light text-primary-custom text-xs font-bold rounded-lg">Fijo</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-4">Plato listo para servicio rápido.</p>
                     </div>
                     <div class="flex justify-between items-center pt-4 border-t border-gray-50">
-                        <span class="text-[#15202B] font-bold text-xl font-['Outfit']">S/ {{ plato.precio }}</span>
-                        <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-12 h-12 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100 shadow-xs">
-                            <i class="ti ti-plus text-xl"></i>
+                        <span class="text-[#15202B] font-bold text-lg lg:text-xl font-['Outfit']">S/ {{ plato.precio }}</span>
+                        <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-10 h-10 lg:w-12 lg:h-12 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100 shadow-xs">
+                            <i class="ti ti-plus text-lg lg:text-xl"></i>
                         </button>
                     </div>
                 </div>
@@ -36,44 +36,44 @@
         </div>
     </div>
 
-    <!-- Panel de Precuenta / Comanda Lateral -->
-    <aside class="w-[380px] h-full bg-white border-l border-gray-100 flex flex-col flex-shrink-0 z-30 shadow-2xl shadow-gray-200/50">
-        <div class="p-6 border-b border-gray-100 flex-shrink-0">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-xl font-['Outfit'] font-bold">Precuenta</h2>
+    <!-- Panel de Precuenta / Comanda Lateral (Responsive: Abajo en móviles, Columna lateral en Laptops) -->
+    <aside class="w-full lg:w-[380px] h-auto lg:h-full bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col flex-shrink-0 z-30 shadow-2xl shadow-gray-200/50">
+        <div class="p-4 lg:p-6 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg lg:text-xl font-['Outfit'] font-bold">Precuenta</h2>
                 <span class="text-xs font-bold text-gray-400">Orden Activa</span>
             </div>
         </div>
 
         <!-- Lista de Items en Orden -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar" id="carrito-body">
+        <div class="max-h-60 lg:max-h-none lg:flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 lg:space-y-4 custom-scrollbar" id="carrito-body">
             <!-- Carga dinámica vía JS -->
         </div>
 
         <!-- Resumen de Pago y Envío -->
-        <div class="p-6 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] flex-shrink-0">
-            <div class="space-y-3 mb-6">
-                <div class="flex justify-between text-2xl font-['Outfit'] font-bold pt-2">
+        <div class="p-4 lg:p-6 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] flex-shrink-0">
+            <div class="space-y-3 mb-4 lg:mb-6">
+                <div class="flex justify-between text-xl lg:text-2xl font-['Outfit'] font-bold pt-2">
                     <span>Total</span>
                     <span class="text-[#15202B]" id="total-monto">S/ 0.00</span>
                 </div>
             </div>
 
-            <form method="post" id="form-orden" class="space-y-4">
+            <form method="post" id="form-orden" class="space-y-3 lg:space-y-4">
                 {% csrf_token %}
                 <input type="hidden" name="items_json" id="items_json">
                 
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Tipo de Pago</label>
-                    <select name="metodo_pago" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-custom">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Tipo de Pago</label>
+                    <select name="metodo_pago" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 lg:py-3 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-custom">
                         <option value="EFECTIVO" selected>💵 Efectivo</option>
                         <option value="YAPE">📱 Yape / Plin</option>
                         <option value="TRANSFERENCIA">🏦 Transferencia</option>
                     </select>
                 </div>
 
-                <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="ti ti-[#F56B45] ti-send text-lg"></i>
+                <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-3.5 lg:py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="ti ti-send text-lg"></i>
                     <span>Enviar a Cocina</span>
                 </button>
             </form>
@@ -114,8 +114,8 @@
 
         if (carrito.length === 0) {
             body.innerHTML = `
-                <div class="text-center py-12 text-gray-300">
-                    <i class="ti ti-shopping-cart-off text-4xl mb-2 block"></i>
+                <div class="text-center py-6 lg:py-12 text-gray-300">
+                    <i class="ti ti-shopping-cart-off text-3xl lg:text-4xl mb-2 block"></i>
                     <p class="text-xs font-bold">No hay platos agregados</p>
                 </div>
             `;
@@ -126,16 +126,16 @@
                 body.innerHTML += `
                     <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                         <div class="flex-1 pr-2">
-                            <h4 class="text-sm font-bold text-[#15202B] mb-0">${item.nombre}</h4>
-                            <span class="text-xs text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
+                            <h4 class="text-xs lg:text-sm font-bold text-[#15202B] mb-0">${item.nombre}</h4>
+                            <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-                                <button onclick="cambiarCantidad(${item.id}, -1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-black">-</button>
-                                <span class="w-6 text-center text-xs font-bold">${item.cantidad}</span>
-                                <button onclick="cambiarCantidad(${item.id}, 1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                                <button onclick="cambiarCantidad(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
+                                <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
+                                <button onclick="cambiarCantidad(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
                             </div>
-                            <span class="text-sm font-bold w-16 text-end">S/ ${subtotal.toFixed(2)}</span>
+                            <span class="text-xs lg:text-sm font-bold w-14 lg:w-16 text-end">S/ ${subtotal.toFixed(2)}</span>
                         </div>
                     </div>
                 `;
