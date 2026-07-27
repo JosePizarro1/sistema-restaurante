@@ -33,9 +33,6 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}"><i class="bi bi-bar-chart-line"></i> Reportes</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/" target="_blank"><i class="bi bi-gear"></i> Platos (Admin)</a>
-                    </li>
                 </ul>
                 <div class="d-flex text-light align-items-center gap-3">
                     <span class="small"><i class="bi bi-person-circle"></i> {{ user.username }}</span>
