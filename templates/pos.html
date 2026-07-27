@@ -26,9 +26,9 @@
     <!-- TAB 1: Tomar Pedido -->
     <div id="tab-content-pedido" class="flex flex-col lg:flex-row gap-6">
         <!-- Sección de Menú y Platos -->
-        <div class="flex-1">
+        <div class="flex-1 pb-28 lg:pb-6">
             <div class="max-w-4xl mx-auto">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 pb-12">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     {% for plato in platos %}
                     <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col">
                         <!-- Imagen o Placeholder -->
@@ -66,37 +66,75 @@
             </div>
         </div>
 
-        <!-- Comanda Lateral para Enviar a Cocina -->
-        <aside class="w-full lg:w-[360px] bg-white rounded-[24px] border border-gray-100 flex flex-col flex-shrink-0 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-                <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
-                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
-            </div>
-
-            <!-- Lista de Items en Orden -->
-            <div class="flex-1 min-h-[200px] overflow-y-auto space-y-3 custom-scrollbar mb-4" id="carrito-body">
-                <!-- Carga dinámica vía JS -->
-            </div>
-
-            <!-- Total y Botón de Enviar a Cocina -->
-            <div class="pt-4 border-t border-gray-100 space-y-4">
-                <div class="flex justify-between text-xl font-['Outfit'] font-bold">
-                    <span>Total Estimado</span>
-                    <span class="text-[#15202B]" id="total-monto">S/ 0.00</span>
+        <!-- ============================================================ -->
+        <!-- DESKTOP: Panel lateral sticky -->
+        <!-- ============================================================ -->
+        <aside id="comanda-desktop" class="hidden lg:flex w-[360px] flex-shrink-0 flex-col">
+            <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 flex flex-col sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                    <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                    <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
                 </div>
-
-                <form method="post" id="form-orden">
-                    {% csrf_token %}
-                    <input type="hidden" name="items_json" id="items_json">
-                    
-                    <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <i class="ti ti-send text-lg"></i>
-                        <span>Enviar a Cocina</span>
-                    </button>
-                </form>
+                <div class="flex-1 min-h-[200px] overflow-y-auto space-y-3 custom-scrollbar mb-4" id="carrito-body">
+                </div>
+                <div class="pt-4 border-t border-gray-100 space-y-4">
+                    <div class="flex justify-between text-xl font-['Outfit'] font-bold">
+                        <span>Total Estimado</span>
+                        <span class="text-[#15202B]" id="total-monto">S/ 0.00</span>
+                    </div>
+                    <form method="post" id="form-orden">
+                        {% csrf_token %}
+                        <input type="hidden" name="items_json" id="items_json">
+                        <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="ti ti-send text-lg"></i>
+                            <span>Enviar a Cocina</span>
+                        </button>
+                    </form>
+                </div>
             </div>
         </aside>
     </div>
+
+    <!-- ============================================================ -->
+    <!-- MOBILE / TABLET: FAB + Drawer desde abajo -->
+    <!-- ============================================================ -->
+
+    <!-- Overlay oscuro detrás del drawer -->
+    <div id="drawer-overlay" class="lg:hidden fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300" onclick="cerrarDrawer()"></div>
+
+    <!-- Drawer de Comanda (mobile) -->
+    <div id="comanda-drawer" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl translate-y-full transition-transform duration-300 ease-out" style="max-height:85vh;">
+        <!-- Handle + Header -->
+        <div class="flex flex-col px-5 pt-4">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                <button onclick="cerrarDrawer()" class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                    <i class="ti ti-x text-lg"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Items -->
+        <div class="overflow-y-auto px-5 py-4 space-y-3" style="max-height:calc(85vh - 220px);" id="carrito-body-mobile">
+        </div>
+        <!-- Total + Botón -->
+        <div class="px-5 pt-3 pb-6 border-t border-gray-100 bg-white space-y-3">
+            <div class="flex justify-between text-xl font-['Outfit'] font-bold">
+                <span>Total Estimado</span>
+                <span class="text-[#15202B]" id="total-monto-mobile">S/ 0.00</span>
+            </div>
+            <button type="button" onclick="enviarOrdenMobile()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 flex items-center justify-center gap-2 cursor-pointer">
+                <i class="ti ti-send text-lg"></i>
+                <span>Enviar a Cocina</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- FAB flotante — visible solo en mobile/tablet -->
+    <button id="fab-carrito" onclick="abrirDrawer()" class="lg:hidden fixed bottom-6 right-5 z-40 btn-primary-custom w-16 h-16 rounded-2xl shadow-xl shadow-[#F56B45]/40 flex items-center justify-center transition-all active:scale-95">
+        <i class="ti ti-shopping-cart text-2xl"></i>
+        <span id="fab-badge" class="absolute -top-2 -right-2 hidden w-6 h-6 bg-[#15202B] text-white text-[11px] font-bold rounded-full items-center justify-center">0</span>
+    </button>
 
     <!-- TAB 2: Órdenes Listas por Cobrar -->
     <div id="tab-content-cobrar" class="hidden">
@@ -163,11 +201,33 @@
 <script>
     let carrito = [];
 
+    // ---- Drawer Mobile ----
+    function abrirDrawer() {
+        const drawer = document.getElementById('comanda-drawer');
+        const overlay = document.getElementById('drawer-overlay');
+        overlay.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            overlay.classList.remove('opacity-0');
+            drawer.classList.remove('translate-y-full');
+        });
+        renderCarritoMobile();
+    }
+
+    function cerrarDrawer() {
+        const drawer = document.getElementById('comanda-drawer');
+        const overlay = document.getElementById('drawer-overlay');
+        drawer.classList.add('translate-y-full');
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+
+    // ---- Tabs ----
     function switchTab(tab) {
         const btnPedido = document.getElementById('tab-btn-pedido');
         const btnCobrar = document.getElementById('tab-btn-cobrar');
         const contentPedido = document.getElementById('tab-content-pedido');
         const contentCobrar = document.getElementById('tab-content-cobrar');
+        const fab = document.getElementById('fab-carrito');
 
         if (tab === 'pedido') {
             btnPedido.classList.add('border-primary-custom', 'text-primary-custom');
@@ -176,6 +236,7 @@
             btnCobrar.classList.add('border-transparent', 'text-gray-400');
             contentPedido.classList.remove('hidden');
             contentCobrar.classList.add('hidden');
+            fab.classList.remove('hidden');
         } else {
             btnCobrar.classList.add('border-primary-custom', 'text-primary-custom');
             btnCobrar.classList.remove('border-transparent', 'text-gray-400');
@@ -183,9 +244,11 @@
             btnPedido.classList.add('border-transparent', 'text-gray-400');
             contentCobrar.classList.remove('hidden');
             contentPedido.classList.add('hidden');
+            fab.classList.add('hidden');
         }
     }
 
+    // ---- Carrito ----
     function agregarAlCarrito(id, nombre, precio) {
         let item = carrito.find(i => i.id === id);
         if (item) {
@@ -194,36 +257,41 @@
             carrito.push({ id: id, nombre: nombre, precio: parseFloat(precio), cantidad: 1 });
         }
         renderCarrito();
+        // Feedback visual: bounce en el FAB
+        const fab = document.getElementById('fab-carrito');
+        fab.classList.add('scale-110');
+        setTimeout(() => fab.classList.remove('scale-110'), 150);
     }
 
     function cambiarCantidad(id, delta) {
         let item = carrito.find(i => i.id === id);
         if (item) {
             item.cantidad += delta;
-            if (item.cantidad <= 0) {
-                carrito = carrito.filter(i => i.id !== id);
-            }
+            if (item.cantidad <= 0) carrito = carrito.filter(i => i.id !== id);
         }
         renderCarrito();
     }
 
-    function renderCarrito() {
-        let body = document.getElementById('carrito-body');
-        body.innerHTML = '';
-        let total = 0;
+    function cambiarCantidadMobile(id, delta) {
+        cambiarCantidad(id, delta);
+        renderCarritoMobile();
+    }
 
+    function buildItemsHTML(container, targetFn) {
+        let total = 0;
         if (carrito.length === 0) {
-            body.innerHTML = `
+            container.innerHTML = `
                 <div class="text-center py-8 text-gray-300">
                     <i class="ti ti-shopping-cart-off text-3xl mb-2 block"></i>
                     <p class="text-xs font-bold">No hay platos en la comanda</p>
                 </div>
             `;
         } else {
+            container.innerHTML = '';
             carrito.forEach(item => {
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal;
-                body.innerHTML += `
+                container.innerHTML += `
                     <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                         <div class="flex-1 pr-2">
                             <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
@@ -231,9 +299,9 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-                                <button onclick="cambiarCantidad(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
+                                <button onclick="${targetFn}(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
                                 <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
-                                <button onclick="cambiarCantidad(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                                <button onclick="${targetFn}(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
                             </div>
                             <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
                         </div>
@@ -241,8 +309,33 @@
                 `;
             });
         }
+        return total;
+    }
 
+    function renderCarrito() {
+        const body = document.getElementById('carrito-body');
+        const total = buildItemsHTML(body, 'cambiarCantidad');
         document.getElementById('total-monto').innerText = `S/ ${total.toFixed(2)}`;
+        actualizarFABBadge();
+    }
+
+    function renderCarritoMobile() {
+        const body = document.getElementById('carrito-body-mobile');
+        const total = buildItemsHTML(body, 'cambiarCantidadMobile');
+        document.getElementById('total-monto-mobile').innerText = `S/ ${total.toFixed(2)}`;
+    }
+
+    function actualizarFABBadge() {
+        const badge = document.getElementById('fab-badge');
+        const totalItems = carrito.reduce((acc, i) => acc + i.cantidad, 0);
+        if (totalItems > 0) {
+            badge.textContent = totalItems;
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+        } else {
+            badge.classList.add('hidden');
+            badge.classList.remove('flex');
+        }
     }
 
     function enviarOrden() {
@@ -254,6 +347,16 @@
         document.getElementById('form-orden').submit();
     }
 
+    function enviarOrdenMobile() {
+        if (carrito.length === 0) {
+            alert("Agrega al menos un plato para enviar la orden a cocina.");
+            return;
+        }
+        document.getElementById('items_json').value = JSON.stringify(carrito);
+        document.getElementById('form-orden').submit();
+    }
+
     renderCarrito();
 </script>
 {% endblock %}
+
