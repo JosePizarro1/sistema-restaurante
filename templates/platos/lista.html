@@ -50,20 +50,33 @@
                 </div>
             </div>
 
-            <!-- Acciones -->
+            <!-- Acciones (Semánticas, RESTful con POST & CSRF) -->
             <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 gap-2">
+                <!-- Editar -->
                 <a href="{% url 'plato_edit' plato.id %}" class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors no-underline">
                     <i class="ti ti-edit text-base"></i>
                     <span>Editar</span>
                 </a>
                 
-                <a href="{% url 'plato_toggle_status' plato.id %}" class="p-2 {% if plato.activo %}bg-amber-50 text-amber-600 hover:bg-amber-100{% else %}bg-green-50 text-green-600 hover:bg-green-100{% endif %} rounded-xl font-bold text-xs transition-colors no-underline" title="{% if plato.activo %}Desactivar{% else %}Activar{% endif %}">
-                    <i class="ti {% if plato.activo %}ti-eye-off{% else %}ti-eye{% endif %} text-base"></i>
-                </a>
+                <!-- Toggle Estado (POST) -->
+                <form action="{% url 'plato_toggle_status' plato.id %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 {% if plato.activo %}bg-amber-50 text-amber-600 hover:bg-amber-100{% else %}bg-green-50 text-green-600 hover:bg-green-100{% endif %} rounded-xl font-bold text-xs transition-colors cursor-pointer border-0" title="{% if plato.activo %}Desactivar{% else %}Activar{% endif %}">
+                        <i class="ti {% if plato.activo %}ti-eye-off{% else %}ti-eye{% endif %} text-base"></i>
+                    </button>
+                </form>
 
-                <button onclick="confirmarAccion('{% url \'plato_delete\' plato.id %}', '¿Eliminar {{ plato.nombre|escapejs }}?', 'El plato dejará de estar disponible en el sistema.', 'warning', 'Sí, eliminar')" class="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-xs transition-colors cursor-pointer" title="Eliminar plato">
-                    <i class="ti ti-trash text-base"></i>
-                </button>
+                <!-- Eliminar (POST con SweetAlert2 Unobtrusive Data-Attributes) -->
+                <form action="{% url 'plato_delete' plato.id %}" method="post" class="inline" 
+                      data-confirm-form 
+                      data-confirm-title="¿Eliminar {{ plato.nombre }}?" 
+                      data-confirm-text="El plato será removido o desactivado si posee órdenes previas." 
+                      data-confirm-button="Sí, eliminar">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-xs transition-colors cursor-pointer border-0" title="Eliminar plato">
+                        <i class="ti ti-trash text-base"></i>
+                    </button>
+                </form>
             </div>
         </div>
         {% empty %}

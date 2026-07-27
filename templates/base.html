@@ -107,12 +107,26 @@
         function confirmarAccion(url, titulo = '¿Estás seguro?', texto = 'Esta acción no se puede deshacer', icono = 'warning', botonConfirmar = 'Sí, continuar') {
             Swal.fire({
                 title: titulo,
-                text: texto,
-                icon: icono,
+        // --- Global Event Delegation para Confirmaciones Unobtrusive (Buenas Prácticas REST & UX) ---
+        document.addEventListener('submit', (e) => {
+            const form = e.target.closest('[data-confirm-form]');
+            if (!form) return;
+            if (form.dataset.confirmed === 'true') return;
+
+            e.preventDefault();
+            const title = form.dataset.confirmTitle || '¿Estás seguro?';
+            const text = form.dataset.confirmText || 'Esta acción no se puede deshacer.';
+            const icon = form.dataset.confirmIcon || 'warning';
+            const confirmBtn = form.dataset.confirmButton || 'Sí, continuar';
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
                 showCancelButton: true,
                 confirmButtonColor: '#F56B45',
                 cancelButtonColor: '#6B7280',
-                confirmButtonText: botonConfirmar,
+                confirmButtonText: confirmBtn,
                 cancelButtonText: 'Cancelar',
                 customClass: {
                     popup: 'rounded-2xl',
@@ -121,10 +135,11 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = url;
+                    form.dataset.confirmed = 'true';
+                    form.submit();
                 }
             });
-        }
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>

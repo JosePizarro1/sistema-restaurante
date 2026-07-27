@@ -191,7 +191,10 @@ def plato_edit_view(request, plato_id):
 
     return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
 
+from django.views.decorators.http import require_POST
+
 @superuser_required
+@require_POST
 def plato_toggle_status_view(request, plato_id):
     plato = get_object_or_404(Plato, id=plato_id)
     plato.activo = not plato.activo
@@ -201,6 +204,7 @@ def plato_toggle_status_view(request, plato_id):
     return redirect('platos_list')
 
 @superuser_required
+@require_POST
 def plato_delete_view(request, plato_id):
     plato = get_object_or_404(Plato, id=plato_id)
     nombre = plato.nombre
@@ -213,4 +217,5 @@ def plato_delete_view(request, plato_id):
         plato.save()
         messages.warning(request, f'El plato "{nombre}" tiene historial de ventas, por lo que fue desactivado en lugar de eliminado.')
     return redirect('platos_list')
+
 
