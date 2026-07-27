@@ -4,7 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}RestoPOS{% endblock %}</title>
+    <meta name="theme-color" content="#F56B45">
+    <meta name="description" content="Sistema de Gestión de Restaurante, POS táctil y Comanda en vivo para Cocina.">
+    <meta property="og:title" content="RestoPOS - Sistema de Restaurante">
+    <meta property="og:description" content="Gestión rápida e intuitiva de pedidos, cocina en tiempo real y reportes analíticos.">
+    <meta property="og:type" content="website">
+
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}">
+
+    <title>{% block title %}RestoPOS - Sistema de Restaurante{% endblock %}</title>
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

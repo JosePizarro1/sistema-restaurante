@@ -23,3 +23,5 @@ Thumbs.db
 
 # Variables de Entorno
 .env
+
+.vercel

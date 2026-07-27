@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F56B45" />
+      <stop offset="100%" stop-color="#D84A22" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <!-- Background Shield/Circle -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect width="512" height="512" rx="128" fill="url(#glowGrad)" />
+
+  <!-- Restaurant Cloche / Covered Dish Icon -->
+  <g transform="translate(106, 120)" fill="#FFFFFF">
+    <!-- Steam Lines -->
+    <path d="M70,30 C65,15 75,0 70,-15" stroke="#FFEAE3" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M150,30 C145,10 155,-5 150,-20" stroke="#FFEAE3" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M230,30 C225,15 235,0 230,-15" stroke="#FFEAE3" stroke-width="12" stroke-linecap="round" fill="none"/>
+
+    <!-- Handle Top -->
+    <circle cx="150" cy="55" r="22" />
+
+    <!-- Cloche Dome -->
+    <path d="M10,190 C10,95 72,55 150,55 C228,55 290,95 290,190 Z" />
+
+    <!-- Plate Base -->
+    <rect x="-10" y="200" width="320" height="26" rx="13" />
+    <path d="M20,232 L280,232 C260,265 40,265 20,232 Z" fill="#FFEAE3" />
+  </g>
+</svg>

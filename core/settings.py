@@ -4,6 +4,16 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cargar automáticamente variables desde .env si existe (Puro Python)
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    with open(env_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k, v)
+
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-restaurante-key-2026-change-in-prod')
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'

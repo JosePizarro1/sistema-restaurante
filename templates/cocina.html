@@ -12,9 +12,17 @@
             <h2 class="text-lg sm:text-xl font-['Outfit'] font-bold">Comandas Pendientes</h2>
             <p class="text-xs text-gray-400">Auto-actualización cada 3 segundos</p>
         </div>
-        <div class="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
-            <span class="text-xs font-bold text-amber-700">En tiempo real</span>
+        <div class="flex items-center gap-3">
+            <!-- Botón Habilitar Sonido -->
+            <button id="btn-audio-cocina" onclick="toggleAudioCocina()" class="px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                <i id="icon-audio-cocina" class="ti ti-volume text-base text-gray-400"></i>
+                <span id="text-audio-cocina">Sonido Desactivado</span>
+            </button>
+
+            <div class="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                <span class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+                <span class="text-xs font-bold text-amber-700">En tiempo real</span>
+            </div>
         </div>
     </div>
 
@@ -156,7 +164,68 @@
     setInterval(updateTimers, 1000);
     updateTimers();
 
-    // Auto-refresh de la página cada 3 segundos para nuevas comandas
+    // Web Audio API sintetizador de campana de cocina
+    let audioEnabled = localStorage.getItem('cocina_audio_enabled') === 'true';
+
+    function updateAudioUI() {
+        const btn = document.getElementById('btn-audio-cocina');
+        const icon = document.getElementById('icon-audio-cocina');
+        const text = document.getElementById('text-audio-cocina');
+
+        if (audioEnabled) {
+            btn.className = "px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer";
+            icon.className = "ti ti-volume text-base text-white animate-bounce";
+            text.textContent = "Sonido Activado 🔔";
+        } else {
+            btn.className = "px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer";
+            icon.className = "ti ti-volume-off text-base text-gray-400";
+            text.textContent = "Sonido Desactivado";
+        }
+    }
+
+    function toggleAudioCocina() {
+        audioEnabled = !audioEnabled;
+        localStorage.setItem('cocina_audio_enabled', audioEnabled);
+        updateAudioUI();
+        if (audioEnabled) playKitchenChime();
+    }
+
+    function playKitchenChime() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota La5 (880Hz)
+            osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.6);
+        } catch (e) {
+            console.log('Audio no interactuado aún');
+        }
+    }
+
+    // Inicializar estado de audio UI
+    updateAudioUI();
+
+    // Detección de incremento de comandas para reproducir sonido
+    const currentOrdersCount = {{ ordenes|length }};
+    const prevOrdersCount = parseInt(sessionStorage.getItem('prev_orders_count') || '0');
+
+    if (audioEnabled && currentOrdersCount > prevOrdersCount && prevOrdersCount > 0) {
+        playKitchenChime();
+    }
+    sessionStorage.setItem('prev_orders_count', currentOrdersCount);
+
+    // Auto-refresh cada 3 segundos
     setTimeout(function() {
         window.location.reload(1);
     }, 3000);
