@@ -97,6 +97,32 @@ def cocina_view(request):
     ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato')
     return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
 
+from django.http import JsonResponse
+
+@login_required
+def api_cocina_ordenes(request):
+    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato').order_by('fecha_creacion')
+    data = []
+    for orden in ordenes_pendientes:
+        detalles = []
+        for det in orden.detalles.all():
+            detalles.append({
+                'plato_nombre': det.plato.nombre,
+                'cantidad': det.cantidad,
+                'nota': det.nota,
+                'es_para_llevar': det.es_para_llevar,
+            })
+        fecha_local = timezone.localtime(orden.fecha_creacion)
+        data.append({
+            'id': orden.id,
+            'fecha_creacion': orden.fecha_creacion.isoformat(),
+            'hora_str': fecha_local.strftime('%H:%M'),
+            'tipo_servicio': orden.tipo_servicio,
+            'nota_general': orden.nota_general,
+            'detalles': detalles
+        })
+    return JsonResponse({'ordenes': data})
+
 @login_required
 def cambiar_estado_orden(request, orden_id, nuevo_estado):
     orden = get_object_or_404(Orden, id=orden_id)

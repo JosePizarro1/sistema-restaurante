@@ -11,6 +11,7 @@ urlpatterns = [
     path('pos/cobrar/<int:orden_id>/', views.cobrar_orden, name='cobrar_orden'),
     path('cocina/', views.cocina_view, name='cocina'),
     path('cocina/estado/<int:orden_id>/<str:nuevo_estado>/', views.cambiar_estado_orden, name='cambiar_estado'),
+    path('api/cocina-ordenes/', views.api_cocina_ordenes, name='api_cocina_ordenes'),
     
     # CRUD Platos (Superusuario)
     path('platos/', views.platos_list_view, name='platos_list'),
