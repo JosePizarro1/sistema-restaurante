@@ -96,14 +96,14 @@
 
             <!-- Botones Listo / Cancelar -->
             <div class="p-4 grid grid-cols-2 gap-3">
-                <a href="{% url 'cambiar_estado' orden.id 'LISTO' %}" class="bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-xl font-bold text-base sm:text-lg shadow-md shadow-green-600/20 transition-all no-underline flex items-center justify-center gap-2">
+                <button onclick="cambiarEstadoAJAX({{ orden.id }}, 'LISTO')" class="bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-xl font-bold text-base sm:text-lg shadow-md shadow-green-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer border-0 w-full">
                     <i class="ti ti-check text-xl"></i>
                     <span>Listo</span>
-                </a>
-                <a href="{% url 'cambiar_estado' orden.id 'CANCELADO' %}" class="bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 text-center py-4 rounded-xl font-bold text-base sm:text-lg transition-all no-underline flex items-center justify-center gap-2" onclick="return confirm('¿Cancelar esta orden?')">
+                </button>
+                <button onclick="confirmarCancelar({{ orden.id }})" class="bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 text-center py-4 rounded-xl font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 cursor-pointer w-full">
                     <i class="ti ti-x text-xl"></i>
                     <span>Cancelar</span>
-                </a>
+                </button>
             </div>
         </div>
         {% empty %}
@@ -327,14 +327,14 @@
                                 ${detallesHTML}
                             </div>
                             <div class="p-4 grid grid-cols-2 gap-3">
-                                <a href="/cocina/estado/${orden.id}/LISTO/" class="bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-xl font-bold text-base sm:text-lg shadow-md shadow-green-600/20 transition-all no-underline flex items-center justify-center gap-2">
+                                <button onclick="cambiarEstadoAJAX(${orden.id}, 'LISTO')" class="bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-xl font-bold text-base sm:text-lg shadow-md shadow-green-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer border-0 w-full">
                                     <i class="ti ti-check text-xl"></i>
                                     <span>Listo</span>
-                                </a>
-                                <a href="/cocina/estado/${orden.id}/CANCELADO/" class="bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 text-center py-4 rounded-xl font-bold text-base sm:text-lg transition-all no-underline flex items-center justify-center gap-2" onclick="return confirm('¿Cancelar esta orden?')">
+                                </button>
+                                <button onclick="confirmarCancelar(${orden.id})" class="bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 text-center py-4 rounded-xl font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 cursor-pointer w-full">
                                     <i class="ti ti-x text-xl"></i>
                                     <span>Cancelar</span>
-                                </a>
+                                </button>
                             </div>
                         </div>
                     `;
@@ -344,6 +344,56 @@
                 updateTimers();
             })
             .catch(err => console.error('Error fetching cocina ordenes:', err));
+    }
+
+    function cambiarEstadoAJAX(ordenId, nuevoEstado) {
+        fetch(`/cocina/estado/${ordenId}/${nuevoEstado}/?ajax=1`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    // Refrescar al instante de forma totalmente silenciosa y dinámica sin recargar
+                    fetchCocinaOrdenes();
+                    
+                    // Alerta toast discreta con SweetAlert2 cargada globalmente en base.html
+                    if (typeof Swal !== 'undefined') {
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: false
+                        });
+                        Toast.fire({
+                            icon: nuevoEstado === 'LISTO' ? 'success' : 'info',
+                            title: nuevoEstado === 'LISTO' ? `Orden #${ordenId} ¡lista!` : `Orden #${ordenId} cancelada.`
+                        });
+                    }
+                }
+            })
+            .catch(err => console.error('Error al cambiar estado:', err));
+    }
+
+    function confirmarCancelar(ordenId) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¿Cancelar esta orden?',
+                text: 'La comanda dejará de mostrarse en la pantalla de cocina.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    cambiarEstadoAJAX(ordenId, 'CANCELADO');
+                }
+            });
+        } else {
+            if (confirm('¿Cancelar esta orden?')) {
+                cambiarEstadoAJAX(ordenId, 'CANCELADO');
+            }
+        }
     }
 
     // Consultar API en segundo plano cada 3 segundos (Sin recargar la página)

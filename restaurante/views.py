@@ -133,6 +133,8 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
             messages.success(request, f'¡Orden #{orden.id} marcada como LISTA para entregar y cobrar!')
         else:
             messages.info(request, f'Orden #{orden.id} cancelada.')
+    if request.GET.get('ajax') == '1':
+        return JsonResponse({'status': 'ok'})
     return redirect('cocina')
 
 import calendar
