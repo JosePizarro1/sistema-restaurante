@@ -4,6 +4,8 @@ class Plato(models.Model):
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=8, decimal_places=2)
     activo = models.BooleanField(default=True)
+    imagen_base64 = models.TextField(blank=True, null=True)
+    imagen_alt = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
         return f"{self.nombre} - S/. {self.precio}"

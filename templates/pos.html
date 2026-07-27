@@ -30,19 +30,31 @@
             <div class="max-w-4xl mx-auto">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 pb-12">
                     {% for plato in platos %}
-                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col justify-between p-5 lg:p-6">
-                        <div>
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-['Outfit'] font-bold text-base lg:text-lg leading-tight">{{ plato.nombre }}</h3>
-                                <span class="px-2.5 py-1 bg-primary-light text-primary-custom text-xs font-bold rounded-lg">Fijo</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mb-4">Plato disponible en cocina.</p>
+                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col">
+                        <!-- Imagen o Placeholder -->
+                        {% if plato.imagen_base64 %}
+                        <div class="h-36 overflow-hidden">
+                            <img src="{{ plato.imagen_base64 }}" alt="{{ plato.imagen_alt|default:plato.nombre }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                         </div>
-                        <div class="flex justify-between items-center pt-4 border-t border-gray-50">
-                            <span class="text-[#15202B] font-bold text-lg lg:text-xl font-['Outfit']">S/ {{ plato.precio }}</span>
-                            <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-10 h-10 lg:w-12 lg:h-12 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100 shadow-xs">
-                                <i class="ti ti-plus text-lg lg:text-xl"></i>
-                            </button>
+                        {% else %}
+                        <div class="h-36 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                            <i class="ti ti-photo text-4xl text-gray-300"></i>
+                        </div>
+                        {% endif %}
+                        <!-- Info del Plato -->
+                        <div class="flex flex-col flex-1 justify-between p-4 lg:p-5">
+                            <div>
+                                <div class="flex justify-between items-start mb-1">
+                                    <h3 class="font-['Outfit'] font-bold text-base leading-tight">{{ plato.nombre }}</h3>
+                                    <span class="px-2 py-0.5 bg-primary-light text-primary-custom text-[10px] font-bold rounded-lg ml-2 shrink-0">Fijo</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center pt-3 border-t border-gray-50 mt-3">
+                                <span class="text-[#15202B] font-bold text-lg font-['Outfit']">S/ {{ plato.precio }}</span>
+                                <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-10 h-10 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100">
+                                    <i class="ti ti-plus text-lg"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {% empty %}

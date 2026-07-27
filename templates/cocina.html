@@ -2,74 +2,75 @@
 
 {% block title %}Cocina - RestoPOS{% endblock %}
 {% block breadcrumb %}Control de Producción{% endblock %}
-{% block page_title %}Pantalla de Cocina{% endblock %}
+{% block page_title %}Pantalla Cocina{% endblock %}
 
 {% block content %}
-<div class="p-8">
-    <div class="flex justify-between items-center mb-8">
+<div class="p-4 sm:p-6 lg:p-8">
+    <!-- Header Cocina -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
-            <h2 class="text-xl font-['Outfit'] font-bold">Comandas Pendientes</h2>
-            <p class="text-xs text-gray-400">Recepción de pedidos en tiempo real</p>
+            <h2 class="text-lg sm:text-xl font-['Outfit'] font-bold">Comandas Pendientes</h2>
+            <p class="text-xs text-gray-400">Auto-actualización cada 3 segundos</p>
         </div>
-        <span class="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl flex items-center gap-2">
-            <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
-            Actualización automática (3s)
-        </span>
+        <div class="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+            <span class="text-xs font-bold text-amber-700">En tiempo real</span>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Grid de Comandas - Diseño optimizado para Tablet/Celular -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {% for orden in ordenes %}
-        <div class="bg-white rounded-[24px] border-2 border-amber-200 overflow-hidden shadow-lg shadow-gray-100 flex flex-col justify-between">
-            <div>
-                <div class="p-6 bg-amber-50/50 border-b border-amber-100 flex justify-between items-center">
-                    <div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Orden</span>
-                        <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B]">#{{ orden.id }}</h3>
-                    </div>
-                    <div class="text-right">
-                        <span class="px-3 py-1 bg-white border border-amber-200 rounded-lg text-xs font-bold text-amber-800">
-                            {{ orden.fecha_creacion|date:"H:i" }} hrs
-                        </span>
-                    </div>
+        <div class="bg-white rounded-2xl border-2 border-amber-200 overflow-hidden shadow-md flex flex-col" data-created="{{ orden.fecha_creacion|date:'c' }}">
+            <!-- Header de la Comanda -->
+            <div class="bg-amber-50 border-b border-amber-100 px-5 py-4 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Comanda</p>
+                    <h3 class="text-3xl sm:text-4xl font-['Outfit'] font-bold text-[#15202B] leading-none">#{{ orden.id }}</h3>
                 </div>
-
-                <div class="p-6 space-y-3">
-                    <div class="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1.5">
-                        <i class="ti ti-credit-card"></i>
-                        <span>Pago: {{ orden.get_metodo_pago_display }}</span>
-                    </div>
-                    
-                    <div class="divide-y divide-gray-50">
-                        {% for detalle in orden.detalles.all %}
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-base font-bold text-[#15202B]">{{ detalle.plato.nombre }}</span>
-                            <span class="w-8 h-8 bg-primary-light text-primary-custom rounded-lg font-bold flex items-center justify-center text-sm">
-                                x{{ detalle.cantidad }}
-                            </span>
-                        </div>
-                        {% endfor %}
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Ingresó a las</p>
+                    <span class="text-sm font-bold text-gray-600">{{ orden.fecha_creacion|date:"H:i" }}</span>
+                    <!-- Timer en vivo -->
+                    <div class="mt-1 px-3 py-1 rounded-full text-xs font-bold timer-badge bg-green-100 text-green-700 text-center timer-display">
+                        --:--
                     </div>
                 </div>
             </div>
 
-            <div class="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
-                <a href="{% url 'cambiar_estado' orden.id 'LISTO' %}" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-3.5 rounded-xl font-bold text-sm shadow-md shadow-green-600/20 transition-all text-decoration-none flex items-center justify-center gap-1.5">
-                    <i class="ti ti-check text-lg"></i>
-                    <span>¡Listo!</span>
+            <!-- Lista de Platos - Texto Grande y Legible -->
+            <div class="flex-1 p-5 space-y-3">
+                {% for detalle in orden.detalles.all %}
+                <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                    <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
+                        {{ detalle.plato.nombre }}
+                    </span>
+                    <span class="ml-3 flex-shrink-0 w-10 h-10 bg-primary-light text-primary-custom font-bold text-lg flex items-center justify-center rounded-xl">
+                        ×{{ detalle.cantidad }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Botones Listo / Cancelar -->
+            <div class="p-4 grid grid-cols-2 gap-3">
+                <a href="{% url 'cambiar_estado' orden.id 'LISTO' %}" class="bg-green-600 hover:bg-green-700 text-white text-center py-4 rounded-xl font-bold text-base sm:text-lg shadow-md shadow-green-600/20 transition-all no-underline flex items-center justify-center gap-2">
+                    <i class="ti ti-check text-xl"></i>
+                    <span>Listo</span>
                 </a>
-                <a href="{% url 'cambiar_estado' orden.id 'CANCELADO' %}" class="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-center py-3.5 rounded-xl font-bold text-sm transition-all text-decoration-none flex items-center justify-center gap-1.5" onclick="return confirm('¿Deseas cancelar esta orden?')">
-                    <i class="ti ti-x text-lg"></i>
+                <a href="{% url 'cambiar_estado' orden.id 'CANCELADO' %}" class="bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 text-center py-4 rounded-xl font-bold text-base sm:text-lg transition-all no-underline flex items-center justify-center gap-2" onclick="return confirm('¿Cancelar esta orden?')">
+                    <i class="ti ti-x text-xl"></i>
                     <span>Cancelar</span>
                 </a>
             </div>
         </div>
         {% empty %}
-        <div class="col-span-3 text-center py-16 bg-white rounded-[24px] border border-gray-100">
-            <div class="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-4">
-                <i class="ti ti-circle-check text-4xl"></i>
+        <div class="col-span-1 sm:col-span-2 xl:col-span-3 text-center py-20 bg-white rounded-2xl border border-gray-100">
+            <div class="w-20 h-20 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 mx-auto mb-4">
+                <i class="ti ti-circle-check text-5xl"></i>
             </div>
-            <h3 class="text-lg font-bold text-[#15202B]">Cocina al día</h3>
-            <p class="text-xs text-gray-400 mt-1">No hay comandas pendientes por atender en este momento.</p>
+            <h3 class="text-xl font-['Outfit'] font-bold text-[#15202B]">Cocina al día</h3>
+            <p class="text-sm text-gray-400 mt-2">No hay comandas pendientes en este momento.</p>
         </div>
         {% endfor %}
     </div>
@@ -78,7 +79,50 @@
 
 {% block scripts %}
 <script>
-    setTimeout(function(){
+    // --- Timer en vivo por comanda ---
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimers() {
+        const cards = document.querySelectorAll('[data-created]');
+        const now = new Date();
+
+        cards.forEach(card => {
+            const created = new Date(card.getAttribute('data-created'));
+            const diffSeconds = Math.floor((now - created) / 1000);
+            const badge = card.querySelector('.timer-display');
+
+            if (!badge) return;
+
+            badge.textContent = formatTime(diffSeconds);
+
+            // Cambiar color según tiempo transcurrido
+            badge.classList.remove(
+                'bg-green-100', 'text-green-700',
+                'bg-amber-100', 'text-amber-700',
+                'bg-red-100', 'text-red-700'
+            );
+
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            if (diffMinutes >= 10) {
+                badge.classList.add('bg-red-100', 'text-red-700');
+            } else if (diffMinutes >= 5) {
+                badge.classList.add('bg-amber-100', 'text-amber-700');
+            } else {
+                badge.classList.add('bg-green-100', 'text-green-700');
+            }
+        });
+    }
+
+    // Actualizar timers cada segundo
+    setInterval(updateTimers, 1000);
+    updateTimers();
+
+    // Auto-refresh de la página cada 3 segundos para nuevas comandas
+    setTimeout(function() {
         window.location.reload(1);
     }, 3000);
 </script>
