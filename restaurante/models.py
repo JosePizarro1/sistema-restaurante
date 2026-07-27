@@ -41,6 +41,7 @@ class DetalleOrden(models.Model):
     plato = models.ForeignKey(Plato, on_delete=models.PROTECT)
     cantidad = models.PositiveIntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
+    nota = models.CharField(max_length=255, blank=True, default='')
 
     def subtotal(self):
         return self.cantidad * self.precio_unitario

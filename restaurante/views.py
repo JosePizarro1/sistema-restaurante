@@ -58,7 +58,8 @@ def pos_view(request):
                 orden=orden,
                 plato=plato,
                 cantidad=cantidad,
-                precio_unitario=plato.precio
+                precio_unitario=plato.precio,
+                nota=item.get('nota', '').strip()
             )
 
         orden.total = total

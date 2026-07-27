@@ -65,7 +65,7 @@ class PlatoAdmin(admin.ModelAdmin):
 class DetalleOrdenInline(admin.TabularInline):
     model = DetalleOrden
     extra = 0
-    readonly_fields = ('plato', 'cantidad', 'precio_unitario')
+    readonly_fields = ('plato', 'cantidad', 'precio_unitario', 'nota')
 
 
 @admin.register(Orden)

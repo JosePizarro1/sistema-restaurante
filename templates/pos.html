@@ -254,7 +254,7 @@
         if (item) {
             item.cantidad += 1;
         } else {
-            carrito.push({ id: id, nombre: nombre, precio: parseFloat(precio), cantidad: 1 });
+            carrito.push({ id: id, nombre: nombre, precio: parseFloat(precio), cantidad: 1, nota: '' });
         }
         renderCarrito();
         // Feedback visual: bounce en el FAB
@@ -277,6 +277,13 @@
         renderCarritoMobile();
     }
 
+    function actualizarNota(id, nuevaNota) {
+        let item = carrito.find(i => i.id === id);
+        if (item) {
+            item.nota = nuevaNota;
+        }
+    }
+
     function buildItemsHTML(container, targetFn) {
         let total = 0;
         if (carrito.length === 0) {
@@ -291,19 +298,31 @@
             carrito.forEach(item => {
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal;
+                const notaEscaped = (item.nota || '').replace(/"/g, '&quot;');
                 container.innerHTML += `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
-                        <div class="flex-1 pr-2">
-                            <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
-                            <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-                                <button onclick="${targetFn}(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
-                                <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
-                                <button onclick="${targetFn}(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                    <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 pr-2">
+                                <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
+                                <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
                             </div>
-                            <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
+                                    <button onclick="${targetFn}(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
+                                    <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
+                                    <button onclick="${targetFn}(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                                </div>
+                                <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <!-- Campo de Nota Especial -->
+                        <div class="relative flex items-center">
+                            <i class="ti ti-note text-amber-500 absolute left-2.5 text-xs"></i>
+                            <input type="text" 
+                                   value="${notaEscaped}" 
+                                   onchange="actualizarNota(${item.id}, this.value)"
+                                   placeholder="Nota (ej: sin cebolla, bien cocido)..." 
+                                   class="w-full pl-7 pr-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-amber-400">
                         </div>
                     </div>
                 `;

@@ -41,13 +41,21 @@
             <!-- Lista de Platos - Texto Grande y Legible -->
             <div class="flex-1 p-5 space-y-3">
                 {% for detalle in orden.detalles.all %}
-                <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                    <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
-                        {{ detalle.plato.nombre }}
-                    </span>
-                    <span class="ml-3 flex-shrink-0 w-10 h-10 bg-primary-light text-primary-custom font-bold text-lg flex items-center justify-center rounded-xl">
-                        ×{{ detalle.cantidad }}
-                    </span>
+                <div class="py-2.5 border-b border-gray-100 last:border-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
+                            {{ detalle.plato.nombre }}
+                        </span>
+                        <span class="ml-3 flex-shrink-0 w-10 h-10 bg-primary-light text-primary-custom font-bold text-lg flex items-center justify-center rounded-xl">
+                            ×{{ detalle.cantidad }}
+                        </span>
+                    </div>
+                    {% if detalle.nota %}
+                    <div class="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/80 border border-amber-300/60 text-amber-900 rounded-lg font-bold text-xs">
+                        <i class="ti ti-note text-amber-700 text-sm"></i>
+                        <span>Nota: {{ detalle.nota }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
