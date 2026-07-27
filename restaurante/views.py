@@ -81,7 +81,7 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
 
 @login_required
 def reportes_view(request):
-    hoy = timezone.now().date()
+    hoy = timezone.localdate()  # Lima (UTC-5), not UTC
     ordenes_hoy = Orden.objects.filter(fecha_creacion__date=hoy, estado='PAGADO')
     
     total_ventas = ordenes_hoy.aggregate(Sum('total'))['total__sum'] or 0
