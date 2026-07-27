@@ -10,6 +10,7 @@ class Plato(models.Model):
 
 class Orden(models.Model):
     METODOS_PAGO = [
+        ('PENDIENTE', 'Pendiente de Pago'),
         ('EFECTIVO', 'Efectivo'),
         ('YAPE', 'Yape / Plin'),
         ('TRANSFERENCIA', 'Transferencia'),
@@ -17,12 +18,13 @@ class Orden(models.Model):
 
     ESTADOS_ORDEN = [
         ('PENDIENTE', 'En Cocina'),
-        ('LISTO', 'Plato Listo'),
+        ('LISTO', 'Plato Listo (Pendiente Cobro)'),
+        ('PAGADO', 'Pagado / Cerrado'),
         ('CANCELADO', 'Cancelado'),
     ]
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='EFECTIVO')
+    metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='PENDIENTE')
     estado = models.CharField(max_length=20, choices=ESTADOS_ORDEN, default='PENDIENTE')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 

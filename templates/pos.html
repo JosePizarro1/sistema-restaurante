@@ -1,90 +1,178 @@
 {% extends 'base.html' %}
 
-{% block title %}Menú & Pedidos - RestoPOS{% endblock %}
-{% block breadcrumb %}Nuevo pedido{% endblock %}
-{% block page_title %}Menú de Platos{% endblock %}
+{% block title %}Menú & Cobros - RestoPOS{% endblock %}
+{% block breadcrumb %}Operación{% endblock %}
+{% block page_title %}Gestión de Pedidos & Caja{% endblock %}
 
 {% block content %}
-<div class="flex flex-col lg:flex-row h-full w-full overflow-hidden">
-    <!-- Sección de Menú y Platos -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8">
-        <div class="max-w-4xl mx-auto">
-            <!-- Grid de Platos (Responsive: 1 col en móviles, 2 en tablets/desktops) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 pb-12">
-                {% for plato in platos %}
-                <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col justify-between p-5 lg:p-6">
-                    <div>
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-['Outfit'] font-bold text-base lg:text-lg leading-tight">{{ plato.nombre }}</h3>
-                            <span class="px-2.5 py-1 bg-primary-light text-primary-custom text-xs font-bold rounded-lg">Fijo</span>
-                        </div>
-                        <p class="text-xs text-gray-400 mb-4">Plato listo para servicio rápido.</p>
-                    </div>
-                    <div class="flex justify-between items-center pt-4 border-t border-gray-50">
-                        <span class="text-[#15202B] font-bold text-lg lg:text-xl font-['Outfit']">S/ {{ plato.precio }}</span>
-                        <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-10 h-10 lg:w-12 lg:h-12 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100 shadow-xs">
-                            <i class="ti ti-plus text-lg lg:text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-span-2 text-center py-12">
-                    <p class="text-gray-400 font-bold">No hay platos disponibles en el menú.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+<div class="p-4 lg:p-8 space-y-6">
+    <!-- Pestañas (Tabs) principales: Tomar Pedido vs Por Cobrar / Listas -->
+    <div class="flex border-b border-gray-200">
+        <button id="tab-btn-pedido" onclick="switchTab('pedido')" class="py-3 px-6 text-sm font-bold border-b-2 border-primary-custom text-primary-custom flex items-center gap-2 focus:outline-none cursor-pointer">
+            <i class="ti ti-plus text-lg"></i>
+            <span>Nuevo Pedido</span>
+        </button>
+        <button id="tab-btn-cobrar" onclick="switchTab('cobrar')" class="py-3 px-6 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-600 flex items-center gap-2 focus:outline-none cursor-pointer relative">
+            <i class="ti ti-cash text-lg"></i>
+            <span>Por Cobrar (Listas)</span>
+            {% if ordenes_listas.count > 0 %}
+            <span class="w-5 h-5 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center animate-bounce">
+                {{ ordenes_listas.count }}
+            </span>
+            {% endif %}
+        </button>
     </div>
 
-    <!-- Panel de Precuenta / Comanda Lateral (Responsive: Abajo en móviles, Columna lateral en Laptops) -->
-    <aside class="w-full lg:w-[380px] h-auto lg:h-full bg-white border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col flex-shrink-0 z-30 shadow-2xl shadow-gray-200/50">
-        <div class="p-4 lg:p-6 border-b border-gray-100 flex-shrink-0">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg lg:text-xl font-['Outfit'] font-bold">Precuenta</h2>
-                <span class="text-xs font-bold text-gray-400">Orden Activa</span>
+    <!-- TAB 1: Tomar Pedido -->
+    <div id="tab-content-pedido" class="flex flex-col lg:flex-row gap-6">
+        <!-- Sección de Menú y Platos -->
+        <div class="flex-1">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6 pb-12">
+                    {% for plato in platos %}
+                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col justify-between p-5 lg:p-6">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-['Outfit'] font-bold text-base lg:text-lg leading-tight">{{ plato.nombre }}</h3>
+                                <span class="px-2.5 py-1 bg-primary-light text-primary-custom text-xs font-bold rounded-lg">Fijo</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-4">Plato disponible en cocina.</p>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-50">
+                            <span class="text-[#15202B] font-bold text-lg lg:text-xl font-['Outfit']">S/ {{ plato.precio }}</span>
+                            <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})" class="w-10 h-10 lg:w-12 lg:h-12 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100 shadow-xs">
+                                <i class="ti ti-plus text-lg lg:text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-2 text-center py-12">
+                        <p class="text-gray-400 font-bold">No hay platos disponibles en el menú.</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Lista de Items en Orden -->
-        <div class="max-h-60 lg:max-h-none lg:flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 lg:space-y-4 custom-scrollbar" id="carrito-body">
-            <!-- Carga dinámica vía JS -->
-        </div>
+        <!-- Comanda Lateral para Enviar a Cocina -->
+        <aside class="w-full lg:w-[360px] bg-white rounded-[24px] border border-gray-100 flex flex-col flex-shrink-0 p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
+            </div>
 
-        <!-- Resumen de Pago y Envío -->
-        <div class="p-4 lg:p-6 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.04)] flex-shrink-0">
-            <div class="space-y-3 mb-4 lg:mb-6">
-                <div class="flex justify-between text-xl lg:text-2xl font-['Outfit'] font-bold pt-2">
-                    <span>Total</span>
+            <!-- Lista de Items en Orden -->
+            <div class="flex-1 min-h-[200px] overflow-y-auto space-y-3 custom-scrollbar mb-4" id="carrito-body">
+                <!-- Carga dinámica vía JS -->
+            </div>
+
+            <!-- Total y Botón de Enviar a Cocina -->
+            <div class="pt-4 border-t border-gray-100 space-y-4">
+                <div class="flex justify-between text-xl font-['Outfit'] font-bold">
+                    <span>Total Estimado</span>
                     <span class="text-[#15202B]" id="total-monto">S/ 0.00</span>
                 </div>
-            </div>
 
-            <form method="post" id="form-orden" class="space-y-3 lg:space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="items_json" id="items_json">
-                
+                <form method="post" id="form-orden">
+                    {% csrf_token %}
+                    <input type="hidden" name="items_json" id="items_json">
+                    
+                    <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="ti ti-send text-lg"></i>
+                        <span>Enviar a Cocina</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+    </div>
+
+    <!-- TAB 2: Órdenes Listas por Cobrar -->
+    <div id="tab-content-cobrar" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for orden in ordenes_listas %}
+            <div class="bg-white rounded-[24px] border-2 border-green-200 p-6 shadow-sm flex flex-col justify-between">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Tipo de Pago</label>
-                    <select name="metodo_pago" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 lg:py-3 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-custom">
-                        <option value="EFECTIVO" selected>💵 Efectivo</option>
-                        <option value="YAPE">📱 Yape / Plin</option>
-                        <option value="TRANSFERENCIA">🏦 Transferencia</option>
-                    </select>
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+                        <div>
+                            <span class="text-xs font-bold uppercase text-green-600">¡Listo para Servir!</span>
+                            <h3 class="text-2xl font-['Outfit'] font-bold">Orden #{{ orden.id }}</h3>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400">{{ orden.fecha_creacion|date:"H:i" }} hrs</span>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        {% for detalle in orden.detalles.all %}
+                        <div class="flex justify-between text-sm">
+                            <span class="font-bold text-gray-700">{{ detalle.plato.nombre }} x{{ detalle.cantidad }}</span>
+                            <span class="text-gray-500">S/ {{ detalle.subtotal|floatformat:2 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-xl mb-4 font-bold text-lg">
+                        <span>Total a Cobrar:</span>
+                        <span class="text-green-600 font-['Outfit'] text-2xl">S/ {{ orden.total }}</span>
+                    </div>
                 </div>
 
-                <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-3.5 lg:py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="ti ti-send text-lg"></i>
-                    <span>Enviar a Cocina</span>
-                </button>
-            </form>
+                <!-- Formulario de Selección de Método de Pago al momento del cobro -->
+                <form action="{% url 'cobrar_orden' orden.id %}" method="post" class="space-y-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Seleccionar Medio de Pago</label>
+                        <select name="metodo_pago" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-custom" required>
+                            <option value="EFECTIVO" selected>💵 Efectivo</option>
+                            <option value="YAPE">📱 Yape / Plin</option>
+                            <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-sm shadow-md shadow-green-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="ti ti-check text-lg"></i>
+                        <span>Cobrar y Cerrar Pedido</span>
+                    </button>
+                </form>
+            </div>
+            {% empty %}
+            <div class="col-span-3 text-center py-16 bg-white rounded-[24px] border border-gray-100">
+                <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 mx-auto mb-4">
+                    <i class="ti ti-cash-off text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-[#15202B]">No hay órdenes por cobrar</h3>
+                <p class="text-xs text-gray-400 mt-1">Las órdenes listas preparadas por la cocina aparecerán aquí para el cobro.</p>
+            </div>
+            {% endfor %}
         </div>
-    </aside>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     let carrito = [];
+
+    function switchTab(tab) {
+        const btnPedido = document.getElementById('tab-btn-pedido');
+        const btnCobrar = document.getElementById('tab-btn-cobrar');
+        const contentPedido = document.getElementById('tab-content-pedido');
+        const contentCobrar = document.getElementById('tab-content-cobrar');
+
+        if (tab === 'pedido') {
+            btnPedido.classList.add('border-primary-custom', 'text-primary-custom');
+            btnPedido.classList.remove('border-transparent', 'text-gray-400');
+            btnCobrar.classList.remove('border-primary-custom', 'text-primary-custom');
+            btnCobrar.classList.add('border-transparent', 'text-gray-400');
+            contentPedido.classList.remove('hidden');
+            contentCobrar.classList.add('hidden');
+        } else {
+            btnCobrar.classList.add('border-primary-custom', 'text-primary-custom');
+            btnCobrar.classList.remove('border-transparent', 'text-gray-400');
+            btnPedido.classList.remove('border-primary-custom', 'text-primary-custom');
+            btnPedido.classList.add('border-transparent', 'text-gray-400');
+            contentCobrar.classList.remove('hidden');
+            contentPedido.classList.add('hidden');
+        }
+    }
 
     function agregarAlCarrito(id, nombre, precio) {
         let item = carrito.find(i => i.id === id);
@@ -114,9 +202,9 @@
 
         if (carrito.length === 0) {
             body.innerHTML = `
-                <div class="text-center py-6 lg:py-12 text-gray-300">
-                    <i class="ti ti-shopping-cart-off text-3xl lg:text-4xl mb-2 block"></i>
-                    <p class="text-xs font-bold">No hay platos agregados</p>
+                <div class="text-center py-8 text-gray-300">
+                    <i class="ti ti-shopping-cart-off text-3xl mb-2 block"></i>
+                    <p class="text-xs font-bold">No hay platos en la comanda</p>
                 </div>
             `;
         } else {
@@ -126,7 +214,7 @@
                 body.innerHTML += `
                     <div class="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl">
                         <div class="flex-1 pr-2">
-                            <h4 class="text-xs lg:text-sm font-bold text-[#15202B] mb-0">${item.nombre}</h4>
+                            <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
                             <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -135,7 +223,7 @@
                                 <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
                                 <button onclick="cambiarCantidad(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
                             </div>
-                            <span class="text-xs lg:text-sm font-bold w-14 lg:w-16 text-end">S/ ${subtotal.toFixed(2)}</span>
+                            <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
                         </div>
                     </div>
                 `;
@@ -147,7 +235,7 @@
 
     function enviarOrden() {
         if (carrito.length === 0) {
-            alert("Agrega al menos un plato para enviar la orden.");
+            alert("Agrega al menos un plato para enviar la orden a cocina.");
             return;
         }
         document.getElementById('items_json').value = JSON.stringify(carrito);
