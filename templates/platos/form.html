@@ -29,7 +29,7 @@
                 <label for="precio" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Precio (S/) *</label>
                 <div class="relative">
                     <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">S/</span>
-                    <input type="number" step="0.50" min="0" id="precio" name="precio" value="{{ plato.precio|default:'' }}" required placeholder="0.00" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm">
+                    <input type="number" step="0.10" min="0" id="precio" name="precio" value="{% if plato %}{{ plato.precio|stringformat:'.2f' }}{% endif %}" required placeholder="0.00" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm">
                 </div>
             </div>
 
