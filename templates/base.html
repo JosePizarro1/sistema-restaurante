@@ -34,12 +34,12 @@
 <body class="bg-[#F7F8FA] h-screen w-full font-['Atkinson_Hyperlegible'] text-[#15202B] overflow-hidden">
 
     {% if user.is_authenticated %}
-    <div class="flex flex-col lg:flex-row h-screen w-full overflow-hidden">
-        <!-- Sidebar Reutilizable (Responsive) -->
+    <div class="flex h-screen w-full overflow-hidden relative">
+        <!-- Sidebar Reutilizable (Hamburguesa en móvil / Fijo en Desktop) -->
         {% include 'includes/sidebar.html' %}
 
         <!-- Área Principal de Contenido -->
-        <main class="flex-1 flex flex-col overflow-hidden pb-16 lg:pb-0">
+        <main class="flex-1 flex flex-col overflow-hidden w-full">
             <!-- Header Reutilizable -->
             {% include 'includes/header.html' %}
 
@@ -65,6 +65,32 @@
         {% block login_content %}{% endblock %}
     {% endif %}
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            const closeBtn = document.getElementById('close-sidebar');
+            const sidebar = document.getElementById('sidebar-menu');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function openSidebar() {
+                if (sidebar && overlay) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                }
+            }
+
+            function closeSidebar() {
+                if (sidebar && overlay) {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

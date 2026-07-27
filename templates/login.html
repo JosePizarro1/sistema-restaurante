@@ -4,8 +4,8 @@
 
 {% block login_content %}
 <div class="flex flex-col lg:flex-row w-full min-h-screen font-['Atkinson_Hyperlegible'] text-[#15202B]">
-    <!-- Left Section: Branding and Message (Oculto en pantallas pequeñas o en formato banner arriba) -->
-    <section class="relative w-full lg:w-[42%] bg-[#F56B45] flex flex-col justify-between p-8 lg:p-16 text-white overflow-hidden shrink-0">
+    <!-- Left Section: Branding and Message (Oculto en móviles muy pequeños, limpio en tablets y desktop) -->
+    <section class="relative w-full lg:w-[42%] bg-[#F56B45] flex flex-col justify-between p-8 lg:p-16 text-white overflow-hidden shrink-0 hidden sm:flex">
         <!-- Decorative Shapes -->
         <div class="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-black/5 rounded-full blur-3xl"></div>
@@ -24,14 +24,14 @@
                 <h1 class="animate-left-title font-['Outfit'] font-bold text-3xl lg:text-5xl leading-[1.08] mb-4 lg:mb-6">
                     Que el servicio siga fluyendo.
                 </h1>
-                <p class="animate-left-subtitle text-sm lg:text-lg text-white/80 leading-relaxed font-normal hidden sm:block">
+                <p class="animate-left-subtitle text-sm lg:text-lg text-white/80 leading-relaxed font-normal">
                     Todo lo que tu equipo necesita para recibir, preparar y entregar pedidos sin perder el ritmo.
                 </p>
             </div>
         </div>
 
         <!-- Footer Info Block -->
-        <div class="animate-left-status relative z-10 hidden sm:flex items-center justify-between bg-black/10 backdrop-blur-xl border border-white/10 p-4 rounded-[22px] max-w-sm mt-6 lg:mt-0">
+        <div class="animate-left-status relative z-10 flex items-center justify-between bg-black/10 backdrop-blur-xl border border-white/10 p-4 rounded-[22px] max-w-sm mt-6 lg:mt-0">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 lg:w-12 lg:h-12 bg-white/10 rounded-xl flex items-center justify-center">
                     <i class="ti ti-tools-kitchen-2 text-xl lg:text-2xl text-white"></i>
@@ -51,10 +51,18 @@
     </section>
 
     <!-- Right Section: Login Form -->
-    <section class="flex-1 bg-white flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden min-h-[500px]">
+    <section class="flex-1 bg-white flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden min-h-screen lg:min-h-0">
         <!-- Background pattern -->
         <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#15202B 1px, transparent 0); background-size: 40px 40px;"></div>
         
+        <!-- Header Móvil del Logo (Solo en móviles pequeños) -->
+        <div class="sm:hidden flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-primary-light rounded-xl flex items-center justify-center text-primary-custom">
+                <i class="ti ti-tools-kitchen-2 text-2xl"></i>
+            </div>
+            <span class="font-['Outfit'] font-bold text-2xl tracking-tight text-[#15202B]">mesa</span>
+        </div>
+
         <!-- Badge -->
         <div class="animate-badge mb-6 sm:mb-8 flex items-center gap-2 px-4 py-1.5 bg-[#F7F8FA] border border-[#F0F1F3] rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] text-[#15202B]/50 shadow-xs">
             <span class="w-2 h-2 bg-[#F56B45] rounded-full"></span>
@@ -96,7 +104,7 @@
                     </div>
                     <div class="relative">
                         <i class="ti ti-lock absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none"></i>
-                        <input class="login-input w-full h-12 sm:h-14 pl-14 pr-14 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300 text-sm sm:text-base" id="password" name="password" placeholder="••••••••" type="password" required />
+                        <input class="login-input w-full h-14 sm:h-14 pl-14 pr-14 bg-[#F7F8FA] border border-[#F0F1F3] rounded-[20px] focus:outline-hidden font-medium placeholder:text-gray-300 text-sm sm:text-base" id="password" name="password" placeholder="••••••••" type="password" required />
                     </div>
                 </div>
 
