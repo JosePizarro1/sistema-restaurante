@@ -25,9 +25,16 @@ class Orden(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
 
+    TIPOS_SERVICIO = [
+        ('MESA', 'En Mesa'),
+        ('LLEVAR', 'Para Llevar'),
+    ]
+
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='PENDIENTE')
     estado = models.CharField(max_length=20, choices=ESTADOS_ORDEN, default='PENDIENTE')
+    tipo_servicio = models.CharField(max_length=20, choices=TIPOS_SERVICIO, default='MESA')
+    nota_general = models.CharField(max_length=255, blank=True, default='')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     class Meta:

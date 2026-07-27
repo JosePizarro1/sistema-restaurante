@@ -71,12 +71,34 @@
         <!-- ============================================================ -->
         <aside id="comanda-desktop" class="hidden lg:flex w-[360px] flex-shrink-0 flex-col">
             <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 flex flex-col sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
                     <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
                     <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
                 </div>
-                <div class="flex-1 min-h-[200px] overflow-y-auto space-y-3 custom-scrollbar mb-4" id="carrito-body">
+
+                <!-- Selector Tipo de Servicio: Mesa vs Llevar -->
+                <div class="mb-3 space-y-2">
+                    <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
+                        <button type="button" onclick="setTipoServicio('MESA')" id="btn-servicio-mesa-dt" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs">
+                            <i class="ti ti-salad text-sm"></i>
+                            <span>En Mesa</span>
+                        </button>
+                        <button type="button" onclick="setTipoServicio('LLEVAR')" id="btn-servicio-llevar-dt" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black">
+                            <i class="ti ti-shopping-bag text-sm"></i>
+                            <span>Para Llevar</span>
+                        </button>
+                    </div>
+
+                    <!-- Input Nota General / Nro Mesa -->
+                    <div class="relative">
+                        <i class="ti ti-bookmark text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="text" id="nota-general-input-dt" oninput="syncNotaGeneral(this.value)" placeholder="Mesa # / Nota General de la orden..." class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-[#15202B] placeholder-gray-400 focus:outline-none focus:border-primary-custom">
+                    </div>
                 </div>
+
+                <div class="flex-1 min-h-[180px] overflow-y-auto space-y-3 custom-scrollbar mb-4" id="carrito-body">
+                </div>
+
                 <div class="pt-4 border-t border-gray-100 space-y-4">
                     <div class="flex justify-between text-xl font-['Outfit'] font-bold">
                         <span>Total Estimado</span>
@@ -85,6 +107,8 @@
                     <form method="post" id="form-orden">
                         {% csrf_token %}
                         <input type="hidden" name="items_json" id="items_json">
+                        <input type="hidden" name="tipo_servicio" id="input_tipo_servicio" value="MESA">
+                        <input type="hidden" name="nota_general" id="input_nota_general" value="">
                         <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
                             <i class="ti ti-send text-lg"></i>
                             <span>Enviar a Cocina</span>
@@ -103,19 +127,38 @@
     <div id="drawer-overlay" class="lg:hidden fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300" onclick="cerrarDrawer()"></div>
 
     <!-- Drawer de Comanda (mobile) -->
-    <div id="comanda-drawer" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl translate-y-full transition-transform duration-300 ease-out" style="max-height:85vh;">
+    <div id="comanda-drawer" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl translate-y-full transition-transform duration-300 ease-out" style="max-height:88vh;">
         <!-- Handle + Header -->
         <div class="flex flex-col px-5 pt-4">
-            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4"></div>
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3"></div>
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
                 <button onclick="cerrarDrawer()" class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
                     <i class="ti ti-x text-lg"></i>
                 </button>
             </div>
+
+            <!-- Selector Tipo de Servicio Mobile -->
+            <div class="mt-3 space-y-2">
+                <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
+                    <button type="button" onclick="setTipoServicio('MESA')" id="btn-servicio-mesa-mb" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs">
+                        <i class="ti ti-salad text-sm"></i>
+                        <span>En Mesa</span>
+                    </button>
+                    <button type="button" onclick="setTipoServicio('LLEVAR')" id="btn-servicio-llevar-mb" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500">
+                        <i class="ti ti-shopping-bag text-sm"></i>
+                        <span>Para Llevar</span>
+                    </button>
+                </div>
+
+                <div class="relative">
+                    <i class="ti ti-bookmark text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <input type="text" id="nota-general-input-mb" oninput="syncNotaGeneral(this.value)" placeholder="Mesa # / Nota General de la orden..." class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-[#15202B] placeholder-gray-400 focus:outline-none focus:border-primary-custom">
+                </div>
+            </div>
         </div>
         <!-- Items -->
-        <div class="overflow-y-auto px-5 py-4 space-y-3" style="max-height:calc(85vh - 220px);" id="carrito-body-mobile">
+        <div class="overflow-y-auto px-5 py-3 space-y-3" style="max-height:calc(88vh - 310px);" id="carrito-body-mobile">
         </div>
         <!-- Total + Botón -->
         <div class="px-5 pt-3 pb-6 border-t border-gray-100 bg-white space-y-3">
@@ -200,6 +243,43 @@
 {% block scripts %}
 <script>
     let carrito = [];
+    let tipoServicioActual = 'MESA';
+    let notaGeneralActual = '';
+
+    function setTipoServicio(tipo) {
+        tipoServicioActual = tipo;
+        document.getElementById('input_tipo_servicio').value = tipo;
+
+        const btnMesaDt = document.getElementById('btn-servicio-mesa-dt');
+        const btnLlevarDt = document.getElementById('btn-servicio-llevar-dt');
+        const btnMesaMb = document.getElementById('btn-servicio-mesa-mb');
+        const btnLlevarMb = document.getElementById('btn-servicio-llevar-mb');
+
+        if (tipo === 'MESA') {
+            [btnMesaDt, btnMesaMb].forEach(b => {
+                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs';
+            });
+            [btnLlevarDt, btnLlevarMb].forEach(b => {
+                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black';
+            });
+        } else {
+            [btnLlevarDt, btnLlevarMb].forEach(b => {
+                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-amber-500 text-white shadow-xs';
+            });
+            [btnMesaDt, btnMesaMb].forEach(b => {
+                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black';
+            });
+        }
+    }
+
+    function syncNotaGeneral(valor) {
+        notaGeneralActual = valor;
+        document.getElementById('input_nota_general').value = valor;
+        const inputDt = document.getElementById('nota-general-input-dt');
+        const inputMb = document.getElementById('nota-general-input-mb');
+        if (inputDt && inputDt !== document.activeElement) inputDt.value = valor;
+        if (inputMb && inputMb !== document.activeElement) inputMb.value = valor;
+    }
 
     // ---- Drawer Mobile ----
     function abrirDrawer() {

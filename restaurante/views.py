@@ -46,7 +46,15 @@ def pos_view(request):
             messages.error(request, 'La orden no puede estar vacía.')
             return redirect('pos')
 
-        orden = Orden.objects.create(metodo_pago='PENDIENTE', estado='PENDIENTE')
+        tipo_servicio = request.POST.get('tipo_servicio', 'MESA')
+        nota_general = request.POST.get('nota_general', '').strip()
+
+        orden = Orden.objects.create(
+            metodo_pago='PENDIENTE', 
+            estado='PENDIENTE',
+            tipo_servicio=tipo_servicio,
+            nota_general=nota_general
+        )
         total = 0
 
         for item in items:
