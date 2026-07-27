@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión - Sistema Restaurante{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center style="min-height: 75vh;">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-lg">
+            <div class="text-center mb-4">
+                <i class="bi bi-shop display-4 text-primary"></i>
+                <h3 class="mt-2 font-weight-bold">RestoPOS</h3>
+                <p class="text-muted">Ingresa tus credenciales para acceder</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger p-2 small">
+                        Usuario o contraseña incorrectos.
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <label class="form-label font-weight-semibold">Usuario</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" class="form-control" placeholder="Ej. admin" required autofocus>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label font-weight-semibold">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 btn-custom"><i class="bi bi-box-arrow-in-right"></i> Ingresar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

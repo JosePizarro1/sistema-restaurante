@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Tomar Pedido - POS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Menú de Platos Fijos -->
+    <div class="col-md-7">
+        <h4 class="mb-3"><i class="bi bi-journal-richtext"></i> Menú de Platos</h4>
+        <div class="row g-3">
+            {% for plato in platos %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-3 text-center cursor-pointer hover-card" onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }})">
+                    <h5 class="card-title text-primary mb-1">{{ plato.nombre }}</h5>
+                    <p class="card-text fs-5 font-weight-bold text-dark">S/. {{ plato.precio }}</p>
+                    <button class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-plus-lg"></i> Agregar</button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-warning">No hay platos configurados en el sistema.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Comanda / Resumen Orden -->
+    <div class="col-md-5">
+        <div class="card p-3">
+            <h4 class="card-title mb-3"><i class="bi bi-receipt"></i> Nueva Orden</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Plato</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-end">Subtotal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="carrito-body">
+                        <!-- Items cargados dinámicamente con JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-top pt-3 mt-2">
+                <div class="d-flex justify-content-between fs-4 font-weight-bold">
+                    <span>Total:</span>
+                    <span class="text-success" id="total-monto">S/. 0.00</span>
+                </div>
+
+                <form method="post" id="form-orden" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="items_json" id="items_json">
+                    
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Método de Pago</label>
+                        <select name="metodo_pago" class="form-select form-select-lg" required>
+                            <option value="EFECTIVO" selected>💵 Efectivo</option>
+                            <option value="YAPE">📱 Yape / Plin</option>
+                            <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-success btn-lg w-100 btn-custom" onclick="enviarOrden()"><i class="bi bi-send-check"></i> Enviar a Cocina</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let carrito = [];
+
+    function agregarAlCarrito(id, nombre, precio) {
+        let item = carrito.find(i => i.id === id);
+        if (item) {
+            item.cantidad += 1;
+        } else {
+            carrito.push({ id: id, nombre: nombre, precio: parseFloat(precio), cantidad: 1 });
+        }
+        renderCarrito();
+    }
+
+    function cambiarCantidad(id, delta) {
+        let item = carrito.find(i => i.id === id);
+        if (item) {
+            item.cantidad += delta;
+            if (item.cantidad <= 0) {
+                carrito = carrito.filter(i => i.id !== id);
+            }
+        }
+        renderCarrito();
+    }
+
+    function renderCarrito() {
+        let body = document.getElementById('carrito-body');
+        body.innerHTML = '';
+        let total = 0;
+
+        carrito.forEach(item => {
+            let subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            body.innerHTML += `
+                <tr>
+                    <td>${item.nombre}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="cambiarCantidad(${item.id}, -1)">-</button>
+                        <span class="mx-1 font-weight-bold">${item.cantidad}</span>
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="cambiarCantidad(${item.id}, 1)">+</button>
+                    </td>
+                    <td class="text-end">S/. ${subtotal.toFixed(2)}</td>
+                    <td class="text-end"><i class="bi bi-trash text-danger cursor-pointer" onclick="cambiarCantidad(${item.id}, -${item.cantidad})"></i></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('total-monto').innerText = `S/. ${total.toFixed(2)}`;
+    }
+
+    function enviarOrden() {
+        if (carrito.length === 0) {
+            alert("Agrega al menos un plato para enviar la orden.");
+            return;
+        }
+        document.getElementById('items_json').value = JSON.stringify(carrito);
+        document.getElementById('form-orden').submit();
+    }
+</script>
+<style>
+    .hover-card { transition: transform 0.15s ease-in-out; cursor: pointer; }
+    .hover-card:hover { transform: translateY(-3px); }
+</style>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte del Día - RestoPOS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up-arrow text-primary"></i> Reporte de Ventas del Día ({{ fecha|date:"d/m/Y" }})</h2>
+</div>
+
+<!-- Tarjetas Resumen -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card p-3 bg-primary text-white text-center">
+            <span class="small text-uppercase">Ventas Totales</span>
+            <h2 class="mb-0 font-weight-bold">S/. {{ total_ventas|floatformat:2 }}</h2>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 bg-success text-white text-center">
+            <span class="small text-uppercase">💵 Efectivo</span>
+            <h3 class="mb-0">S/. {{ ventas_efectivo|floatformat:2 }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 bg-info text-white text-center">
+            <span class="small text-uppercase">📱 Yape / Plin</span>
+            <h3 class="mb-0">S/. {{ ventas_yape|floatformat:2 }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 bg-secondary text-white text-center">
+            <span class="small text-uppercase">🏦 Transferencias</span>
+            <h3 class="mb-0">S/. {{ ventas_transferencia|floatformat:2 }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gráficos de Ventas -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-3 h-100">
+            <h5 class="card-title text-center mb-3">Distribución por Método de Pago</h5>
+            <canvas id="graficoPagos"></canvas>
+        </div>
+    </div>
+
+    <!-- Platos más Vendidos -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-3 h-100">
+            <h5 class="card-title mb-3">Platos Más Vendidos Hoy</h5>
+            <ul class="list-group list-group-flush">
+                {% for plato in platos_mas_vendidos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ plato.plato__nombre }}</span>
+                    <span class="badge bg-success rounded-pill fs-6">{{ plato.total_cantidad }} unidades</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No se registran ventas listas el día de hoy.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('graficoPagos').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Efectivo', 'Yape / Plin', 'Transferencia'],
+            datasets: [{
+                data: [{{ ventas_efectivo }}, {{ ventas_yape }}, {{ ventas_transferencia }}],
+                backgroundColor: ['#198754', '#0dcaf0', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+{% endblock %}
