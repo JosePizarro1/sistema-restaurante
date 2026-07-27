@@ -99,30 +99,106 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
             messages.info(request, f'Orden #{orden.id} cancelada.')
     return redirect('cocina')
 
+import calendar
+from datetime import datetime, date, timedelta
+from django.db.models.functions import TruncDate
+
 @login_required
 def reportes_view(request):
-    hoy = timezone.localdate()  # Lima (UTC-5), not UTC
-    ordenes_hoy = Orden.objects.filter(fecha_creacion__date=hoy, estado='PAGADO')
+    hoy = timezone.localdate()
     
-    total_ventas = ordenes_hoy.aggregate(Sum('total'))['total__sum'] or 0
-    ventas_efectivo = ordenes_hoy.filter(metodo_pago='EFECTIVO').aggregate(Sum('total'))['total__sum'] or 0
-    ventas_yape = ordenes_hoy.filter(metodo_pago='YAPE').aggregate(Sum('total'))['total__sum'] or 0
-    ventas_transferencia = ordenes_hoy.filter(metodo_pago='TRANSFERENCIA').aggregate(Sum('total'))['total__sum'] or 0
+    # Parámetros de filtro por GET
+    mes_str = request.GET.get('mes')
+    anio_str = request.GET.get('anio')
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
 
-    platos_mas_vendidos = DetalleOrden.objects.filter(orden__fecha_creacion__date=hoy, orden__estado='PAGADO') \
-        .values('plato__nombre') \
-        .annotate(total_cantidad=Sum('cantidad')) \
-        .order_by('-total_cantidad')[:5]
+    usar_rango = bool(fecha_inicio_str and fecha_fin_str)
+
+    if usar_rango:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            mes_sel = fecha_inicio.month
+            anio_sel = fecha_inicio.year
+        except ValueError:
+            usar_rango = False
+            mes_sel = hoy.month
+            anio_sel = hoy.year
+            fecha_inicio = date(anio_sel, mes_sel, 1)
+            _, num_days = calendar.monthrange(anio_sel, mes_sel)
+            fecha_fin = date(anio_sel, mes_sel, num_days)
+    else:
+        try:
+            mes_sel = int(mes_str) if mes_str else hoy.month
+            anio_sel = int(anio_str) if anio_str else hoy.year
+        except ValueError:
+            mes_sel = hoy.month
+            anio_sel = hoy.year
+        
+        fecha_inicio = date(anio_sel, mes_sel, 1)
+        _, num_days = calendar.monthrange(anio_sel, mes_sel)
+        fecha_fin = date(anio_sel, mes_sel, num_days)
+
+    # Filtrar órdenes cerradas (PAGADO) en el rango seleccionado
+    ordenes_periodo = Orden.objects.filter(
+        fecha_creacion__date__gte=fecha_inicio,
+        fecha_creacion__date__lte=fecha_fin,
+        estado='PAGADO'
+    )
+
+    total_ventas = ordenes_periodo.aggregate(Sum('total'))['total__sum'] or 0
+    ventas_efectivo = ordenes_periodo.filter(metodo_pago='EFECTIVO').aggregate(Sum('total'))['total__sum'] or 0
+    ventas_yape = ordenes_periodo.filter(metodo_pago='YAPE').aggregate(Sum('total'))['total__sum'] or 0
+    ventas_transferencia = ordenes_periodo.filter(metodo_pago='TRANSFERENCIA').aggregate(Sum('total'))['total__sum'] or 0
+
+    # Platos más vendidos en el periodo
+    platos_mas_vendidos = DetalleOrden.objects.filter(
+        orden__in=ordenes_periodo
+    ).values('plato__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:5]
+
+    # Agrupación diaria para el gráfico de líneas
+    ventas_diarias_qs = ordenes_periodo.annotate(dia=TruncDate('fecha_creacion')) \
+        .values('dia') \
+        .annotate(total_dia=Sum('total'))
+
+    ventas_dict = {item['dia']: float(item['total_dia']) for item in ventas_diarias_qs}
+
+    # Generar secuencia de días completa para línea continua
+    labels_dias = []
+    data_ventas = []
+    
+    curr = fecha_inicio
+    while curr <= fecha_fin:
+        labels_dias.append(curr.strftime('%d/%m'))
+        data_ventas.append(ventas_dict.get(curr, 0.0))
+        curr += timedelta(days=1)
+
+    meses_nombres = [
+        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
+        (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
+        (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+    ]
+    anios_disponibles = list(range(hoy.year - 2, hoy.year + 2))
 
     context = {
-        'fecha': hoy,
         'total_ventas': total_ventas,
         'ventas_efectivo': ventas_efectivo,
         'ventas_yape': ventas_yape,
         'ventas_transferencia': ventas_transferencia,
         'platos_mas_vendidos': platos_mas_vendidos,
+        'labels_dias_json': json.dumps(labels_dias),
+        'data_ventas_json': json.dumps(data_ventas),
+        'mes_sel': mes_sel,
+        'anio_sel': anio_sel,
+        'fecha_inicio_str': fecha_inicio.strftime('%Y-%m-%d'),
+        'fecha_fin_str': fecha_fin.strftime('%Y-%m-%d'),
+        'usar_rango': usar_rango,
+        'meses_nombres': meses_nombres,
+        'anios_disponibles': anios_disponibles,
     }
     return render(request, 'reportes.html', context)
+
 
 
 # ==========================================

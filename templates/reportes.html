@@ -1,53 +1,134 @@
 {% extends 'base.html' %}
 
-{% block title %}Reportes - RestoPOS{% endblock %}
+{% block title %}Reportes y Métricas - RestoPOS{% endblock %}
 {% block breadcrumb %}Estadísticas del Negocio{% endblock %}
-{% block page_title %}Reportes y Métricas del Día{% endblock %}
+{% block page_title %}Reportes de Ventas{% endblock %}
 
 {% block content %}
-<div class="p-8 space-y-8">
-    <!-- Fila de Tarjetas de Totales -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Vendido Hoy</span>
-            <h3 class="text-3xl font-['Outfit'] font-bold text-primary-custom mt-2 mb-0">S/ {{ total_ventas|floatformat:2 }}</h3>
+<div class="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+    <!-- BARRA DE FILTROS RESPONSIVE -->
+    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <form method="get" action="{% url 'reportes' %}" id="filtro-form" class="flex flex-wrap items-end gap-4 justify-between">
+            <div class="flex flex-wrap items-end gap-4 w-full md:w-auto">
+                
+                <!-- Selector por Mes y Año -->
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div>
+                        <label for="mes" class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Mes</label>
+                        <select name="mes" id="mes" class="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-[#15202B] focus:outline-none focus:border-primary-custom">
+                            {% for m_num, m_nombre in meses_nombres %}
+                            <option value="{{ m_num }}" {% if m_num == mes_sel %}selected{% endif %}>{{ m_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="anio" class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Año</label>
+                        <select name="anio" id="anio" class="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-[#15202B] focus:outline-none focus:border-primary-custom">
+                            {% for a in anios_disponibles %}
+                            <option value="{{ a }}" {% if a == anio_sel %}selected{% endif %}>{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- O por Rango de Fechas Específico -->
+                <div class="flex items-center gap-2 border-l border-gray-100 pl-0 sm:pl-4 w-full sm:w-auto">
+                    <div>
+                        <label for="fecha_inicio" class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Desde</label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio_str }}" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-[#15202B] focus:outline-none focus:border-primary-custom">
+                    </div>
+                    <div>
+                        <label for="fecha_fin" class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Hasta</label>
+                        <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin_str }}" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-[#15202B] focus:outline-none focus:border-primary-custom">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button type="submit" class="flex-1 sm:flex-none btn-primary-custom px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="ti ti-filter text-base"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a href="{% url 'reportes' %}" class="px-4 py-2.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-xl font-bold text-xs transition-colors no-underline flex items-center justify-center gap-1">
+                    <i class="ti ti-refresh text-base"></i>
+                    <span>Mes Actual</span>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- TARJETAS DE TOTALES DEL PERIODO -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Vendido</span>
+            <h3 class="text-2xl sm:text-3xl font-['Outfit'] font-bold text-primary-custom mt-2 mb-0">S/ {{ total_ventas|floatformat:2 }}</h3>
+            <span class="text-[10px] text-gray-400 mt-1">Periodo seleccionado</span>
         </div>
-        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">💵 Ingreso Efectivo</span>
-            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_efectivo|floatformat:2 }}</h3>
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">💵 Efectivo</span>
+            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_efectivo|floatformat:2 }}</h3>
+            <span class="text-[10px] text-gray-400 mt-1">Cobrado en caja</span>
         </div>
-        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📱 Ingreso Yape / Plin</span>
-            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_yape|floatformat:2 }}</h3>
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📱 Yape / Plin</span>
+            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_yape|floatformat:2 }}</h3>
+            <span class="text-[10px] text-gray-400 mt-1">Pagos digitales</span>
         </div>
-        <div class="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🏦 Transferencias</span>
-            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_transferencia|floatformat:2 }}</h3>
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🏦 Transferencia</span>
+            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_transferencia|floatformat:2 }}</h3>
+            <span class="text-[10px] text-gray-400 mt-1">Bancos</span>
         </div>
     </div>
 
-    <!-- Gráfico y Platos más vendidos -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
-            <h4 class="text-base font-['Outfit'] font-bold mb-4">Ingresos por Tipo de Pago</h4>
-            <div class="h-64 flex items-center justify-center">
+    <!-- GRÁFICO PRINCIPAL DE LÍNEAS (VENTAS DIARIAS) -->
+    <div class="bg-white p-5 sm:p-7 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+                <h3 class="text-lg font-['Outfit'] font-bold text-[#15202B]">Evolución Diaria de Ventas</h3>
+                <p class="text-xs text-gray-400">Ingresos diarios acumulados del periodo seleccionado</p>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1 bg-primary-light text-primary-custom rounded-lg text-xs font-bold">
+                <i class="ti ti-chart-line text-base"></i>
+                <span>Tendencia Diaria</span>
+            </div>
+        </div>
+
+        <div class="h-72 sm:h-80 relative w-full">
+            <canvas id="graficoVentasLinea"></canvas>
+        </div>
+    </div>
+
+    <!-- SECCIÓN SECUNDARIA: DISTRIBUCIÓN PAGO Y TOP PLATOS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <!-- Gráfico de Dona: Métodos de Pago -->
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <h4 class="text-base font-['Outfit'] font-bold text-[#15202B] mb-4">Distribución por Método de Pago</h4>
+            <div class="h-64 relative flex items-center justify-center">
                 <canvas id="graficoPagos"></canvas>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
-            <h4 class="text-base font-['Outfit'] font-bold mb-4">Top Platos Vendidos Hoy</h4>
+        <!-- Top Platos del Periodo -->
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h4 class="text-base font-['Outfit'] font-bold text-[#15202B] mb-4">Top Platos Vendidos en el Periodo</h4>
             <div class="divide-y divide-gray-50">
                 {% for plato in platos_mas_vendidos %}
                 <div class="py-3 flex justify-between items-center">
-                    <span class="text-sm font-bold text-[#15202B]">{{ plato.plato__nombre }}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center">#{{ forloop.counter }}</span>
+                        <span class="text-sm font-bold text-[#15202B]">{{ plato.plato__nombre }}</span>
+                    </div>
                     <span class="px-3 py-1 bg-primary-light text-primary-custom rounded-lg text-xs font-bold">
                         {{ plato.total_cantidad }} unidades
                     </span>
                 </div>
                 {% empty %}
-                <div class="py-8 text-center text-gray-400 text-xs">
-                    Sin ventas registradas el día de hoy.
+                <div class="py-12 text-center text-gray-400 text-xs">
+                    <i class="ti ti-receipt-off text-3xl block mb-2 text-gray-300"></i>
+                    Sin ventas registradas en este periodo.
                 </div>
                 {% endfor %}
             </div>
@@ -59,23 +140,121 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('graficoPagos').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Efectivo', 'Yape / Plin', 'Transferencia'],
-            datasets: [{
-                data: [{{ ventas_efectivo }}, {{ ventas_yape }}, {{ ventas_transferencia }}],
-                backgroundColor: ['#10B981', '#F56B45', '#6366F1']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' }
+    document.addEventListener('DOMContentLoaded', () => {
+        // Data parsed from Django
+        const labelsDias = {{ labels_dias_json|safe }};
+        const dataVentas = {{ data_ventas_json|safe }};
+
+        // --- 1. Gráfico de Líneas (Ventas Diarias) ---
+        const ctxLinea = document.getElementById('graficoVentasLinea').getContext('2d');
+
+        // Crear gradiente debajo de la línea
+        const gradient = ctxLinea.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(245, 107, 69, 0.25)');
+        gradient.addColorStop(1, 'rgba(245, 107, 69, 0.0)');
+
+        new Chart(ctxLinea, {
+            type: 'line',
+            data: {
+                labels: labelsDias,
+                datasets: [{
+                    label: 'Ventas (S/)',
+                    data: dataVentas,
+                    borderColor: '#F56B45',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#F56B45',
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#15202B',
+                    pointHoverBorderColor: '#FFFFFF'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#15202B',
+                        titleFont: { family: 'Outfit', size: 13, weight: 'bold' },
+                        bodyFont: { family: 'Atkinson Hyperlegible', size: 12 },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Ventas: S/ ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: 'Atkinson Hyperlegible', size: 11 },
+                            color: '#9CA3AF'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#F3F4F6' },
+                        ticks: {
+                            font: { family: 'Atkinson Hyperlegible', size: 11 },
+                            color: '#9CA3AF',
+                            callback: function(value) {
+                                return 'S/ ' + value;
+                            }
+                        }
+                    }
+                }
             }
-        }
+        });
+
+        // --- 2. Gráfico Dona (Métodos de Pago) ---
+        const ctxDona = document.getElementById('graficoPagos').getContext('2d');
+        new Chart(ctxDona, {
+            type: 'doughnut',
+            data: {
+                labels: ['Efectivo', 'Yape / Plin', 'Transferencia'],
+                datasets: [{
+                    data: [{{ ventas_efectivo }}, {{ ventas_yape }}, {{ ventas_transferencia }}],
+                    backgroundColor: ['#10B981', '#F56B45', '#6366F1'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Outfit', size: 12, weight: 'bold' },
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: S/ ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     });
 </script>
 {% endblock %}
