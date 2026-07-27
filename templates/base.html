@@ -56,9 +56,8 @@
     {% endif %}
 
     <script>
+        // --- Control de Sidebar Móvil (Menú Hamburguesa & Overlay) ---
         document.addEventListener('DOMContentLoaded', () => {
-            const toggleBtn = document.getElementById('toggle-sidebar');
-            const closeBtn = document.getElementById('close-sidebar');
             const sidebar = document.getElementById('sidebar-menu');
             const overlay = document.getElementById('sidebar-overlay');
 
@@ -76,38 +75,46 @@
                 }
             }
 
-            if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
-            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-            if (overlay) overlay.addEventListener('click', closeSidebar);
+            document.addEventListener('click', (e) => {
+                const toggleBtn = e.target.closest('#toggle-sidebar');
+                const closeBtn = e.target.closest('#close-sidebar');
+                const isOverlay = e.target.closest('#sidebar-overlay');
+
+                if (toggleBtn) {
+                    e.preventDefault();
+                    openSidebar();
+                } else if (closeBtn || isOverlay) {
+                    e.preventDefault();
+                    closeSidebar();
+                }
+            });
         });
 
         // --- SweetAlert2 Toast Handler para Django Messages ---
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3500,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
+        if (typeof Swal !== 'undefined') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
 
-        {% if messages %}
-            {% for message in messages %}
-                Toast.fire({
-                    icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
-                    title: "{{ message|escapejs }}"
-                });
-            {% endfor %}
-        {% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                    Toast.fire({
+                        icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
+                        title: "{{ message|escapejs }}"
+                    });
+                {% endfor %}
+            {% endif %}
+        }
 
-        // --- Helper global para confirmaciones SweetAlert2 ---
-        function confirmarAccion(url, titulo = '¿Estás seguro?', texto = 'Esta acción no se puede deshacer', icono = 'warning', botonConfirmar = 'Sí, continuar') {
-            Swal.fire({
-                title: titulo,
-        // --- Global Event Delegation para Confirmaciones Unobtrusive (Buenas Prácticas REST & UX) ---
+        // --- Global Event Delegation para Confirmaciones Unobtrusive (Formularios) ---
         document.addEventListener('submit', (e) => {
             const form = e.target.closest('[data-confirm-form]');
             if (!form) return;
@@ -119,26 +126,33 @@
             const icon = form.dataset.confirmIcon || 'warning';
             const confirmBtn = form.dataset.confirmButton || 'Sí, continuar';
 
-            Swal.fire({
-                title: title,
-                text: text,
-                icon: icon,
-                showCancelButton: true,
-                confirmButtonColor: '#F56B45',
-                cancelButtonColor: '#6B7280',
-                confirmButtonText: confirmBtn,
-                cancelButtonText: 'Cancelar',
-                customClass: {
-                    popup: 'rounded-2xl',
-                    confirmButton: 'rounded-xl text-sm font-bold px-5 py-2.5',
-                    cancelButton: 'rounded-xl text-sm font-bold px-5 py-2.5'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: icon,
+                    showCancelButton: true,
+                    confirmButtonColor: '#F56B45',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: confirmBtn,
+                    cancelButtonText: 'Cancelar',
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        confirmButton: 'rounded-xl text-sm font-bold px-5 py-2.5',
+                        cancelButton: 'rounded-xl text-sm font-bold px-5 py-2.5'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = 'true';
+                        form.submit();
+                    }
+                });
+            } else {
+                if (confirm(title)) {
                     form.dataset.confirmed = 'true';
                     form.submit();
                 }
-            });
+            }
         });
     </script>
     {% block scripts %}{% endblock %}
