@@ -1,10 +1,12 @@
-import io
 import base64
+import io
+
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from PIL import Image
-from .models import Plato, Orden, DetalleOrden
+
+from .models import DetalleOrden, Orden, Plato
 
 
 class PlatoForm(forms.ModelForm):

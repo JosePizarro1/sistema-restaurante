@@ -120,6 +120,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
 <script>
     // --- Timer en vivo por comanda ---
     function formatTime(seconds) {
@@ -396,7 +397,34 @@
         }
     }
 
-    // Consultar API en segundo plano cada 3 segundos (Sin recargar la página)
-    setInterval(fetchCocinaOrdenes, 3000);
+    // --- Configuración de Pusher Realtime ---
+    if (typeof Pusher !== 'undefined') {
+        const pusher = new Pusher('d453f1674eaf84a17f5f', {
+            cluster: 'us2'
+        });
+
+        pusher.connection.bind('connected', function() {
+            console.log('⚡ Pusher conectado exitosamente');
+        });
+
+        const channel = pusher.subscribe('cocina-channel');
+
+        channel.bind('pusher:subscription_succeeded', function() {
+            console.log('⚡ Suscripto exitosamente al canal: cocina-channel');
+        });
+
+        channel.bind('nueva-orden', function(data) {
+            console.log('⚡ Nueva orden recibida vía Pusher:', data);
+            fetchCocinaOrdenes();
+        });
+
+        channel.bind('actualizar-cocina', function(data) {
+            console.log('⚡ Actualización de cocina recibida vía Pusher:', data);
+            fetchCocinaOrdenes();
+        });
+    }
+
+    // Carga inicial al ingresar a la pantalla
+    fetchCocinaOrdenes();
 </script>
 {% endblock %}

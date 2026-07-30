@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Plato(models.Model):
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=8, decimal_places=2)
@@ -11,24 +12,24 @@ class Plato(models.Model):
         return f"{self.nombre} - S/. {self.precio}"
 
 class Orden(models.Model):
-    METODOS_PAGO = [
+    METODOS_PAGO = (
         ('PENDIENTE', 'Pendiente de Pago'),
         ('EFECTIVO', 'Efectivo'),
         ('YAPE', 'Yape / Plin'),
         ('TRANSFERENCIA', 'Transferencia'),
-    ]
+    )
 
-    ESTADOS_ORDEN = [
+    ESTADOS_ORDEN = (
         ('PENDIENTE', 'En Cocina'),
         ('LISTO', 'Plato Listo (Pendiente Cobro)'),
         ('PAGADO', 'Pagado / Cerrado'),
         ('CANCELADO', 'Cancelado'),
-    ]
+    )
 
-    TIPOS_SERVICIO = [
+    TIPOS_SERVICIO = (
         ('MESA', 'En Mesa'),
         ('LLEVAR', 'Para Llevar'),
-    ]
+    )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='PENDIENTE')
@@ -38,7 +39,7 @@ class Orden(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     class Meta:
-        ordering = ['-fecha_creacion']
+        ordering = ('-fecha_creacion',)
 
     def __str__(self):
         return f"Orden #{self.id} - {self.estado} ({self.get_metodo_pago_display()})"

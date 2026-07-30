@@ -1,14 +1,20 @@
-from django.shortcuts import render, redirect, get_object_or_404
+import base64
+import io
+import json
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
-from django.contrib import messages
 from django.db.models import Sum
+from django.db.models.deletion import ProtectedError
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Plato, Orden, DetalleOrden
-import json
-import io
-import base64
+from django.utils.dateparse import parse_date
 from PIL import Image
+
+from .models import DetalleOrden, Orden, Plato
+from .pusher_utils import trigger_pusher_event
+
 
 def superuser_required(view_func):
     decorator = user_passes_test(
@@ -74,6 +80,8 @@ def pos_view(request):
         orden.total = total
         orden.save()
 
+        trigger_pusher_event('nueva-orden', {'orden_id': orden.id})
+
         messages.success(request, f'Orden #{orden.id} enviada a cocina con éxito!')
         return redirect('pos')
 
@@ -89,6 +97,7 @@ def cobrar_orden(request, orden_id):
             orden.metodo_pago = metodo_pago
             orden.estado = 'PAGADO'
             orden.save()
+            trigger_pusher_event('actualizar-cocina', {'orden_id': orden.id, 'nuevo_estado': 'PAGADO'})
             messages.success(request, f'¡Orden #{orden.id} cobrada y cerrada exitosamente con {orden.get_metodo_pago_display()}!')
     return redirect('pos')
 
@@ -98,6 +107,7 @@ def cocina_view(request):
     return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
 
 from django.http import JsonResponse
+
 
 @login_required
 def api_cocina_ordenes(request):
@@ -129,6 +139,7 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
     if nuevo_estado in ['LISTO', 'CANCELADO']:
         orden.estado = nuevo_estado
         orden.save()
+        trigger_pusher_event('actualizar-cocina', {'orden_id': orden.id, 'nuevo_estado': nuevo_estado})
         if nuevo_estado == 'LISTO':
             messages.success(request, f'¡Orden #{orden.id} marcada como LISTA para entregar y cobrar!')
         else:
@@ -138,8 +149,10 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
     return redirect('cocina')
 
 import calendar
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
+
 from django.db.models.functions import TruncDate
+
 
 @login_required
 def reportes_view(request):
@@ -155,8 +168,10 @@ def reportes_view(request):
 
     if usar_rango:
         try:
-            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            fecha_inicio = parse_date(fecha_inicio_str)
+            fecha_fin = parse_date(fecha_fin_str)
+            if not fecha_inicio or not fecha_fin:
+                raise ValueError
             mes_sel = fecha_inicio.month
             anio_sel = fecha_inicio.year
         except ValueError:
@@ -265,7 +280,7 @@ def plato_create_view(request):
         if imagen_file:
             try:
                 plato.imagen_base64 = process_image_to_base64(imagen_file)
-            except Exception as e:
+            except (ValueError, OSError) as e:
                 messages.error(request, f'Error al procesar la imagen: {e}')
                 return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
 
@@ -295,7 +310,7 @@ def plato_edit_view(request, plato_id):
         if imagen_file:
             try:
                 plato.imagen_base64 = process_image_to_base64(imagen_file)
-            except Exception as e:
+            except (ValueError, OSError) as e:
                 messages.error(request, f'Error al procesar la imagen: {e}')
                 return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
 
@@ -306,6 +321,7 @@ def plato_edit_view(request, plato_id):
     return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
 
 from django.views.decorators.http import require_POST
+
 
 @superuser_required
 @require_POST
@@ -325,7 +341,7 @@ def plato_delete_view(request, plato_id):
     try:
         plato.delete()
         messages.success(request, f'Plato "{nombre}" eliminado.')
-    except Exception:
+    except ProtectedError:
         # Si tiene órdenes asociadas
         plato.activo = False
         plato.save()

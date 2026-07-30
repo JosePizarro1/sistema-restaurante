@@ -1,8 +1,10 @@
-import io
 import base64
-from PIL import Image, ImageDraw, ImageFont
-from django.core.management.base import BaseCommand
+import io
+
 from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
+from PIL import Image, ImageDraw, ImageFont
+
 from restaurante.models import Plato
 
 
@@ -19,7 +21,7 @@ def generar_imagen_demo(nombre, color_bg, color_accent):
     try:
         font_title = ImageFont.truetype("arial.ttf", 26)
         font_sub = ImageFont.truetype("arial.ttf", 14)
-    except IOError:
+    except OSError:
         font_title = ImageFont.load_default()
         font_sub = ImageFont.load_default()
 
