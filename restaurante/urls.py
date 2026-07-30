@@ -20,5 +20,12 @@ urlpatterns = [
     path('platos/editar/<int:plato_id>/', views.plato_edit_view, name='plato_edit'),
     path('platos/toggle/<int:plato_id>/', views.plato_toggle_status_view, name='plato_toggle_status'),
     path('platos/eliminar/<int:plato_id>/', views.plato_delete_view, name='plato_delete'),
+
+    # CRUD Categorías (Superusuario)
+    path('categorias/', views.categorias_list_view, name='categorias_list'),
+    path('categorias/nueva/', views.categoria_create_view, name='categoria_create'),
+    path('categorias/editar/<int:categoria_id>/', views.categoria_edit_view, name='categoria_edit'),
+    path('categorias/eliminar/<int:categoria_id>/', views.categoria_delete_view, name='categoria_delete'),
 ]
+
 

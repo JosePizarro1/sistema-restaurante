@@ -24,6 +24,18 @@
                 <input type="text" id="nombre" name="nombre" value="{{ plato.nombre|default:'' }}" required placeholder="Ej: Ceviche Mixto" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm">
             </div>
 
+            <!-- Categoría del Plato -->
+            <div>
+                <label for="categoria" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Categoría del Plato</label>
+                <select id="categoria" name="categoria" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-custom focus:ring-2 focus:ring-primary-custom/20 outline-none transition-all font-bold text-sm bg-white">
+                    <option value="">-- Sin Categoría --</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if plato.categoria_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
             <!-- Precio -->
             <div>
                 <label for="precio" class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Precio (S/) *</label>

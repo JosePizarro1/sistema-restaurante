@@ -6,7 +6,14 @@ from django.contrib import admin
 from django.utils.html import format_html
 from PIL import Image
 
-from .models import DetalleOrden, Orden, Plato
+from .models import Categoria, DetalleOrden, Orden, Plato
+
+
+@admin.register(Categoria)
+class CategoriaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'orden', 'activo')
+    list_editable = ('orden', 'activo')
+    search_fields = ('nombre',)
 
 
 class PlatoForm(forms.ModelForm):
@@ -14,7 +21,7 @@ class PlatoForm(forms.ModelForm):
 
     class Meta:
         model = Plato
-        fields = ['nombre', 'precio', 'activo', 'imagen_alt']
+        fields = ['nombre', 'categoria', 'precio', 'activo', 'imagen_alt']
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -42,10 +49,10 @@ class PlatoForm(forms.ModelForm):
 @admin.register(Plato)
 class PlatoAdmin(admin.ModelAdmin):
     form = PlatoForm
-    list_display = ('nombre', 'precio', 'activo', 'preview_imagen')
-    list_filter = ('activo',)
+    list_display = ('nombre', 'categoria', 'precio', 'activo', 'preview_imagen')
+    list_filter = ('categoria', 'activo')
     search_fields = ('nombre',)
-    fields = ('nombre', 'precio', 'activo', 'imagen_upload', 'imagen_alt', 'preview_admin')
+    fields = ('nombre', 'categoria', 'precio', 'activo', 'imagen_upload', 'imagen_alt', 'preview_admin')
     readonly_fields = ('preview_admin',)
 
     def preview_imagen(self, obj):

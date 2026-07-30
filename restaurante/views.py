@@ -5,14 +5,14 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from PIL import Image
 
-from .models import DetalleOrden, Orden, Plato
+from .models import Categoria, DetalleOrden, Orden, Plato
 from .pusher_utils import trigger_pusher_event
 
 
@@ -86,7 +86,8 @@ def pos_view(request):
         return redirect('pos')
 
     ordenes_listas = Orden.objects.filter(estado='LISTO').prefetch_related('detalles__plato')
-    return render(request, 'pos.html', {'platos': platos, 'ordenes_listas': ordenes_listas})
+    categorias = Categoria.objects.filter(activo=True).order_by('orden', 'nombre')
+    return render(request, 'pos.html', {'platos': platos, 'ordenes_listas': ordenes_listas, 'categorias': categorias})
 
 @login_required
 def cobrar_orden(request, orden_id):
@@ -265,46 +266,53 @@ def platos_list_view(request):
 
 @superuser_required
 def plato_create_view(request):
+    categorias = Categoria.objects.all().order_by('orden', 'nombre')
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
         precio = request.POST.get('precio', '0').strip()
+        categoria_id = request.POST.get('categoria')
         activo = request.POST.get('activo') == 'on'
         imagen_file = request.FILES.get('imagen')
 
         if not nombre or not precio:
             messages.error(request, 'El nombre y el precio son requeridos.')
-            return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+            return render(request, 'platos/form.html', {'categorias': categorias, 'titulo': 'Nuevo Plato'})
 
-        plato = Plato(nombre=nombre, precio=precio, activo=activo)
+        categoria = Categoria.objects.filter(id=categoria_id).first() if categoria_id else None
+        plato = Plato(nombre=nombre, precio=precio, categoria=categoria, activo=activo)
 
         if imagen_file:
             try:
                 plato.imagen_base64 = process_image_to_base64(imagen_file)
             except (ValueError, OSError) as e:
                 messages.error(request, f'Error al procesar la imagen: {e}')
-                return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+                return render(request, 'platos/form.html', {'categorias': categorias, 'titulo': 'Nuevo Plato'})
 
         plato.save()
         messages.success(request, f'¡Plato "{plato.nombre}" creado exitosamente!')
         return redirect('platos_list')
 
-    return render(request, 'platos/form.html', {'titulo': 'Nuevo Plato'})
+    return render(request, 'platos/form.html', {'categorias': categorias, 'titulo': 'Nuevo Plato'})
 
 @superuser_required
 def plato_edit_view(request, plato_id):
     plato = get_object_or_404(Plato, id=plato_id)
+    categorias = Categoria.objects.all().order_by('orden', 'nombre')
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
         precio = request.POST.get('precio', '0').strip()
+        categoria_id = request.POST.get('categoria')
         activo = request.POST.get('activo') == 'on'
         imagen_file = request.FILES.get('imagen')
 
         if not nombre or not precio:
             messages.error(request, 'El nombre y el precio son requeridos.')
-            return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+            return render(request, 'platos/form.html', {'plato': plato, 'categorias': categorias, 'titulo': f'Editar {plato.nombre}'})
 
+        categoria = Categoria.objects.filter(id=categoria_id).first() if categoria_id else None
         plato.nombre = nombre
         plato.precio = precio
+        plato.categoria = categoria
         plato.activo = activo
 
         if imagen_file:
@@ -312,13 +320,13 @@ def plato_edit_view(request, plato_id):
                 plato.imagen_base64 = process_image_to_base64(imagen_file)
             except (ValueError, OSError) as e:
                 messages.error(request, f'Error al procesar la imagen: {e}')
-                return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+                return render(request, 'platos/form.html', {'plato': plato, 'categorias': categorias, 'titulo': f'Editar {plato.nombre}'})
 
         plato.save()
         messages.success(request, f'¡Plato "{plato.nombre}" actualizado exitosamente!')
         return redirect('platos_list')
 
-    return render(request, 'platos/form.html', {'plato': plato, 'titulo': f'Editar {plato.nombre}'})
+    return render(request, 'platos/form.html', {'plato': plato, 'categorias': categorias, 'titulo': f'Editar {plato.nombre}'})
 
 from django.views.decorators.http import require_POST
 
@@ -347,5 +355,70 @@ def plato_delete_view(request, plato_id):
         plato.save()
         messages.warning(request, f'El plato "{nombre}" tiene historial de ventas, por lo que fue desactivado en lugar de eliminado.')
     return redirect('platos_list')
+
+
+# ==========================================
+# MÓDULO CRUD DE CATEGORÍAS (SUPERUSUARIOS)
+# ==========================================
+
+@superuser_required
+def categorias_list_view(request):
+    categorias = Categoria.objects.annotate(total_platos=Count('platos')).order_by('orden', 'nombre')
+    return render(request, 'categorias/lista.html', {'categorias': categorias})
+
+@superuser_required
+def categoria_create_view(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        orden = request.POST.get('orden', '0').strip()
+        activo = request.POST.get('activo') == 'on'
+
+        if not nombre:
+            messages.error(request, 'El nombre de la categoría es requerido.')
+            return render(request, 'categorias/form.html', {'titulo': 'Nueva Categoría'})
+
+        try:
+            Categoria.objects.create(nombre=nombre, orden=int(orden or 0), activo=activo)
+            messages.success(request, f'¡Categoría "{nombre}" creada exitosamente!')
+            return redirect('categorias_list')
+        except Exception as e:  # noqa: BLE001
+            messages.error(request, f'Error al crear la categoría: {e}')
+            return render(request, 'categorias/form.html', {'titulo': 'Nueva Categoría'})
+
+    return render(request, 'categorias/form.html', {'titulo': 'Nueva Categoría'})
+
+@superuser_required
+def categoria_edit_view(request, categoria_id):
+    categoria = get_object_or_404(Categoria, id=categoria_id)
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        orden = request.POST.get('orden', '0').strip()
+        activo = request.POST.get('activo') == 'on'
+
+        if not nombre:
+            messages.error(request, 'El nombre de la categoría es requerido.')
+            return render(request, 'categorias/form.html', {'categoria': categoria, 'titulo': f'Editar {categoria.nombre}'})
+
+        try:
+            categoria.nombre = nombre
+            categoria.orden = int(orden or 0)
+            categoria.activo = activo
+            categoria.save()
+            messages.success(request, f'¡Categoría "{nombre}" actualizada exitosamente!')
+            return redirect('categorias_list')
+        except Exception as e:  # noqa: BLE001
+            messages.error(request, f'Error al actualizar la categoría: {e}')
+            return render(request, 'categorias/form.html', {'categoria': categoria, 'titulo': f'Editar {categoria.nombre}'})
+
+    return render(request, 'categorias/form.html', {'categoria': categoria, 'titulo': f'Editar {categoria.nombre}'})
+
+@superuser_required
+@require_POST
+def categoria_delete_view(request, categoria_id):
+    categoria = get_object_or_404(Categoria, id=categoria_id)
+    nombre = categoria.nombre
+    categoria.delete()
+    messages.success(request, f'Categoría "{nombre}" eliminada exitosamente.')
+    return redirect('categorias_list')
 
 

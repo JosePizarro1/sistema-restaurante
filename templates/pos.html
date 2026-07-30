@@ -28,9 +28,27 @@
         <!-- Sección de Menú y Platos -->
         <div class="flex-1 pb-28 lg:pb-6">
             <div class="max-w-4xl mx-auto">
+                <!-- Filtro de Categorías -->
+                {% if categorias %}
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-5 custom-scrollbar">
+                    <button type="button" 
+                            onclick="filtrarCategoria('todas', this)" 
+                            class="cat-chip px-4 py-2 bg-primary-custom text-white font-bold text-xs rounded-xl shrink-0 transition-all shadow-xs cursor-pointer border-0">
+                        ✨ Todos ({{ platos.count }})
+                    </button>
+                    {% for cat in categorias %}
+                    <button type="button" 
+                            onclick="filtrarCategoria({{ cat.id }}, this)" 
+                            class="cat-chip px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs rounded-xl shrink-0 transition-all cursor-pointer">
+                        {{ cat.nombre }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     {% for plato in platos %}
-                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col">
+                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}">
                         <!-- Imagen o Placeholder -->
                         {% if plato.imagen_base64 %}
                         <div class="h-36 overflow-hidden">
@@ -46,7 +64,11 @@
                             <div>
                                 <div class="flex justify-between items-start mb-1">
                                     <h3 class="font-['Outfit'] font-bold text-base leading-tight">{{ plato.nombre }}</h3>
-                                    <span class="px-2 py-0.5 bg-primary-light text-primary-custom text-[10px] font-bold rounded-lg ml-2 shrink-0">Fijo</span>
+                                    {% if plato.categoria %}
+                                        <span class="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-lg ml-2 shrink-0 border border-amber-200/50">{{ plato.categoria.nombre }}</span>
+                                    {% else %}
+                                        <span class="px-2 py-0.5 bg-gray-50 text-gray-400 text-[10px] font-bold rounded-lg ml-2 shrink-0">General</span>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="flex justify-between items-center pt-3 border-t border-gray-50 mt-3">
@@ -497,6 +519,21 @@
         }
         document.getElementById('items_json').value = JSON.stringify(carrito);
         document.getElementById('form-orden').submit();
+    }
+
+    function filtrarCategoria(catId, btnEl) {
+        document.querySelectorAll('.cat-chip').forEach(btn => {
+            btn.className = 'cat-chip px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs rounded-xl shrink-0 transition-all cursor-pointer';
+        });
+        btnEl.className = 'cat-chip px-4 py-2 bg-primary-custom text-white font-bold text-xs rounded-xl shrink-0 transition-all shadow-xs cursor-pointer border-0';
+
+        document.querySelectorAll('.dish-card').forEach(card => {
+            if (catId === 'todas' || card.dataset.categoriaId == catId) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
     }
 
     renderCarrito();

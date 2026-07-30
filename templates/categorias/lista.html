@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Categorías - RestoPOS{% endblock %}
+{% block breadcrumb %}Administración{% endblock %}
+{% block page_title %}Categorías de la Carta{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8">
+    <!-- Header de Gestión -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B]">Gestión de Categorías</h2>
+            <p class="text-xs text-gray-400">Organiza la carta de tu restaurante agregando, ordenando o deshabilitando categorías</p>
+        </div>
+        <a href="{% url 'categoria_create' %}" class="btn-primary-custom px-5 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-2 no-underline">
+            <i class="ti ti-plus text-lg"></i>
+            <span>Nueva Categoría</span>
+        </a>
+    </div>
+
+    <!-- Lista de Categorías en Grid Responsive -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for cat in categorias %}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col justify-between group hover:shadow-md transition-all">
+            <div>
+                <div class="flex justify-between items-start mb-3">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center font-bold text-xl">
+                        <i class="ti ti-[#15202B] ti-category-2"></i>
+                    </div>
+                    {% if cat.activo %}
+                        <span class="px-2.5 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">Activa</span>
+                    {% else %}
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">Inactiva</span>
+                    {% endif %}
+                </div>
+
+                <h3 class="font-['Outfit'] font-bold text-xl text-[#15202B] mb-1">{{ cat.nombre }}</h3>
+                <div class="flex items-center gap-4 text-xs text-gray-400 mt-2">
+                    <span class="flex items-center gap-1 font-bold text-gray-600">
+                        <i class="ti ti-salad text-sm text-primary-custom"></i>
+                        {{ cat.total_platos }} platos
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <i class="ti ti-sort-ascending text-sm"></i>
+                        Orden: {{ cat.orden }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="pt-4 mt-4 border-t border-gray-50 flex items-center justify-between gap-2">
+                <a href="{% url 'categoria_edit' cat.id %}" class="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors no-underline">
+                    <i class="ti ti-edit text-base"></i>
+                    <span>Editar</span>
+                </a>
+                <form action="{% url 'categoria_delete' cat.id %}" method="post" onsubmit="return confirm('¿Seguro de eliminar la categoría &quot;{{ cat.nombre }}&quot;?');">
+                    {% csrf_token %}
+                    <button type="submit" class="w-9 h-9 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl flex items-center justify-center transition-colors cursor-pointer border-0" title="Eliminar Categoría">
+                        <i class="ti ti-trash text-base"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-100">
+            <div class="w-16 h-16 bg-gray-50 text-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl">
+                <i class="ti ti-category"></i>
+            </div>
+            <h3 class="text-lg font-bold text-[#15202B]">No hay categorías registradas</h3>
+            <p class="text-xs text-gray-400 mt-1">Crea tu primera categoría para organizar los platos en el POS.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

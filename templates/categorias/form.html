@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - RestoPOS{% endblock %}
+{% block breadcrumb %}Categorías{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">
+            <h2 class="text-xl font-['Outfit'] font-bold text-[#15202B]">{{ titulo }}</h2>
+            <a href="{% url 'categorias_list' %}" class="text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 no-underline">
+                <i class="ti ti-arrow-left text-base"></i>
+                <span>Volver al listado</span>
+            </a>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Nombre de la Categoría -->
+            <div>
+                <label for="nombre" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+                    Nombre de la Categoría <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="nombre" name="nombre" value="{{ categoria.nombre|default:'' }}" 
+                       placeholder="Ej: Entradas, Picantería Arequipeña, Bebidas..." 
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#15202B] focus:outline-none focus:border-primary-custom" required>
+            </div>
+
+            <!-- Orden de Visualización -->
+            <div>
+                <label for="orden" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+                    Orden de Prioridad en el POS
+                </label>
+                <input type="number" id="orden" name="orden" value="{{ categoria.orden|default:0 }}" 
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#15202B] focus:outline-none focus:border-primary-custom" min="0">
+                <p class="text-[11px] text-gray-400 mt-1">Los números menores aparecen primero en las pestañas del menú.</p>
+            </div>
+
+            <!-- Estado Activo/Inactivo -->
+            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <input type="checkbox" id="activo" name="activo" class="w-5 h-5 accent-primary-custom rounded cursor-pointer"
+                       {% if categoria %}{% if categoria.activo %}checked{% endif %}{% else %}checked{% endif %}>
+                <label for="activo" class="text-sm font-bold text-[#15202B] cursor-pointer">
+                    Categoría Activa (Visible en el menú táctil del POS)
+                </label>
+            </div>
+
+            <!-- Botones -->
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <a href="{% url 'categorias_list' %}" class="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold no-underline transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn-primary-custom px-6 py-3 rounded-xl text-sm font-bold shadow-md cursor-pointer border-0">
+                    Guardar Categoría
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
