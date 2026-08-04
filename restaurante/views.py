@@ -110,9 +110,13 @@ def pos_view(request):
     ordenes_listas = Orden.objects.filter(estado='LISTO').prefetch_related('detalles__plato', 'detalles__menu')
     categorias = Categoria.objects.filter(activo=True).order_by('orden', 'nombre')
     menus = Menu.objects.filter(activo=True).select_related('categoria_entrada', 'categoria_segundo')
+    entradas = Plato.objects.filter(activo=True, categoria__nombre='Entrada')
+    segundos = Plato.objects.filter(activo=True, categoria__nombre='Segundo')
     return render(request, 'pos.html', {
         'platos': platos,
         'menus': menus,
+        'entradas': entradas,
+        'segundos': segundos,
         'ordenes_listas': ordenes_listas,
         'categorias': categorias,
     })

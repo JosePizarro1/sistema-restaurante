@@ -43,7 +43,7 @@
                     {% for m in menus %}
                     <div class="flex items-center gap-3 shrink-0 relative z-10 w-full sm:w-auto justify-between sm:justify-end border-t border-white/20 pt-3 sm:border-0 sm:pt-0">
                         <button type="button" 
-                                onclick="agregarMenuAlCarrito({{ m.id }}, '{{ m.nombre|escapejs }} Combo', {{ m.precio }})" 
+                                onclick="abrirModalMenu({{ m.id }}, '{{ m.nombre|escapejs }}', {{ m.precio }})" 
                                 class="w-full sm:w-auto px-5 py-3 bg-white text-amber-800 font-extrabold text-xs rounded-xl shadow-md hover:bg-amber-50 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-0">
                             <i class="ti ti-plus text-base"></i>
                             <span>Pedir Menú (S/ {{ m.precio }})</span>
@@ -616,12 +616,165 @@
             console.log('⚡ Suscripto exitosamente al canal: cocina-channel (POS)');
         });
 
-        channel.bind('actualizar-cocina', function(data) {
-            if (data.nuevo_estado === 'LISTO' || data.nuevo_estado === 'PAGADO') {
-                window.location.reload();
-            }
+    // --- Modal Interactivo de Menú Combo ---
+    let currentMenuModalData = { id: null, nombre: '', precio: 13.00 };
+    let entradaElegida = null;
+    let segundoElegido = null;
+
+    function abrirModalMenu(menuId, menuNombre, menuPrecio) {
+        currentMenuModalData = { id: menuId, nombre: menuNombre, precio: menuPrecio };
+        entradaElegida = null;
+        segundoElegido = null;
+        
+        document.querySelectorAll('.btn-entrada-item').forEach(btn => {
+            btn.className = 'btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
         });
+        document.querySelectorAll('.btn-segundo-item').forEach(btn => {
+            btn.className = 'btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
+        });
+
+        document.getElementById('lbl-entrada-sel').textContent = '(Obligatorio)';
+        document.getElementById('lbl-segundo-sel').textContent = '(Obligatorio)';
+        document.getElementById('btn-confirmar-menu-combo').disabled = true;
+
+        document.getElementById('modal-menu-combo').classList.remove('hidden');
+    }
+
+    function cerrarModalMenu() {
+        document.getElementById('modal-menu-combo').classList.add('hidden');
+    }
+
+    function seleccionarEntrada(nombre, btnEl) {
+        entradaElegida = nombre;
+        document.querySelectorAll('.btn-entrada-item').forEach(btn => {
+            btn.className = 'btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
+        });
+        btnEl.className = 'btn-entrada-item p-3 bg-amber-500 text-white border border-amber-600 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between shadow-xs';
+        document.getElementById('lbl-entrada-sel').textContent = '✓ ' + nombre;
+        validarConfirmacionMenu();
+    }
+
+    function seleccionarSegundo(nombre, btnEl) {
+        segundoElegido = nombre;
+        document.querySelectorAll('.btn-segundo-item').forEach(btn => {
+            btn.className = 'btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
+        });
+        btnEl.className = 'btn-segundo-item p-3 bg-amber-500 text-white border border-amber-600 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between shadow-xs';
+        document.getElementById('lbl-segundo-sel').textContent = '✓ ' + nombre;
+        validarConfirmacionMenu();
+    }
+
+    function validarConfirmacionMenu() {
+        const btn = document.getElementById('btn-confirmar-menu-combo');
+        if (entradaElegida && segundoElegido) {
+            btn.disabled = false;
+        } else {
+            btn.disabled = true;
+        }
+    }
+
+    function confirmarAgregarMenuCombo() {
+        if (!entradaElegida || !segundoElegido) return;
+        
+        const nombreCombo = `Menú (${entradaElegida} + ${segundoElegido})`;
+        const notaCombo = `Entrada: ${entradaElegida} | Segundo: ${segundoElegido}`;
+        
+        carrito.push({
+            id: currentMenuModalData.id,
+            tipo: 'menu',
+            nombre: nombreCombo,
+            precio: parseFloat(currentMenuModalData.precio),
+            cantidad: 1,
+            nota: notaCombo,
+            imagen_base64: '',
+            es_para_llevar: (tipoServicioActual === 'LLEVAR')
+        });
+
+        renderCarrito();
+        cerrarModalMenu();
+
+        const fab = document.getElementById('fab-carrito');
+        if (fab) {
+            fab.classList.add('scale-110');
+            setTimeout(() => fab.classList.remove('scale-110'), 150);
+        }
     }
 </script>
+
+<!-- Modal Interactivo: Armar Menú Combo (Entrada + Segundo) -->
+<div id="modal-menu-combo" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[28px] max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 border border-gray-100 max-h-[90vh] flex flex-col">
+        <!-- Header del Modal -->
+        <div class="flex items-center justify-between border-b border-gray-100 pb-3 shrink-0">
+            <div>
+                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-extrabold rounded-lg uppercase tracking-wide">Menú Combo S/ 13.00</span>
+                <h3 class="text-xl font-bold font-['Outfit'] text-[#15202B] mt-1">Arma tu Menú del Día</h3>
+            </div>
+            <button type="button" onclick="cerrarModalMenu()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition-all cursor-pointer">
+                <i class="ti ti-x text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Cuerpo con selección de Entrada y Segundo -->
+        <div class="overflow-y-auto space-y-5 flex-1 pr-1 custom-scrollbar">
+            <!-- Paso 1: Selección de Entrada -->
+            <div>
+                <label class="block text-xs font-extrabold text-gray-500 uppercase tracking-wider mb-2.5">
+                    1. Selecciona la Entrada <span class="text-amber-600 font-bold text-xs" id="lbl-entrada-sel">(Obligatorio)</span>
+                </label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    {% for ent in entradas %}
+                    <button type="button" 
+                            onclick="seleccionarEntrada('{{ ent.nombre|escapejs }}', this)" 
+                            class="btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
+                        <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900">{{ ent.nombre }}</span>
+                        <span class="text-[10px] font-bold text-gray-400 mt-1 flex items-center gap-1">
+                            <i class="ti ti-salad text-xs"></i> Entrada
+                        </span>
+                    </button>
+                    {% empty %}
+                    <p class="text-xs text-gray-400 italic col-span-2">No hay entradas registradas.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Paso 2: Selección de Segundo -->
+            <div>
+                <label class="block text-xs font-extrabold text-gray-500 uppercase tracking-wider mb-2.5">
+                    2. Selecciona el Segundo <span class="text-amber-600 font-bold text-xs" id="lbl-segundo-sel">(Obligatorio)</span>
+                </label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    {% for seg in segundos %}
+                    <button type="button" 
+                            onclick="seleccionarSegundo('{{ seg.nombre|escapejs }}', this)" 
+                            class="btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
+                        <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900 line-clamp-1">{{ seg.nombre }}</span>
+                        <span class="text-[10px] font-bold text-amber-700/70 mt-1 flex items-center gap-1">
+                            <i class="ti ti-check-double text-xs"></i> Segundo
+                        </span>
+                    </button>
+                    {% empty %}
+                    <p class="text-xs text-gray-400 italic col-span-2">No hay segundos registrados.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Confirmación -->
+        <div class="pt-3 border-t border-gray-100 shrink-0 flex items-center justify-between gap-3">
+            <button type="button" onclick="cerrarModalMenu()" class="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-black">
+                Cancelar
+            </button>
+            <button type="button" 
+                    id="btn-confirmar-menu-combo"
+                    disabled
+                    onclick="confirmarAgregarMenuCombo()" 
+                    class="px-5 py-3 bg-amber-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-amber-600 transition-all flex items-center gap-2 cursor-pointer border-0">
+                <i class="ti ti-plus text-base"></i>
+                <span>Agregar Menú Combo (S/ 13.00)</span>
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
