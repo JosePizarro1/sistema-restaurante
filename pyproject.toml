@@ -1,3 +1,15 @@
+[project]
+name = "sistema-restaurante"
+version = "0.1.0"
+dependencies = [
+    "Django>=6.0",
+    "psycopg2-binary>=2.9",
+    "dj-database-url>=3.1",
+    "gunicorn>=26.0",
+    "Pillow>=12.3",
+    "pusher>=3.3",
+]
+
 [tool.ruff]
 extend-exclude = ["*/migrations/*"]
 line-length = 180
@@ -5,3 +17,4 @@ line-length = 180
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
+
