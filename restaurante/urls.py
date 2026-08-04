@@ -33,6 +33,8 @@ urlpatterns = [
     path('mesas/crear/', views.mesa_create_view, name='mesa_create'),
     path('mesas/eliminar/<int:mesa_id>/', views.mesa_delete_view, name='mesa_delete'),
     path('ambientes/crear/', views.ambiente_create_view, name='ambiente_create'),
+    path('ambientes/editar/<int:ambiente_id>/', views.ambiente_edit_view, name='ambiente_edit'),
+    path('ambientes/eliminar/<int:ambiente_id>/', views.ambiente_delete_view, name='ambiente_delete'),
 ]
 
 

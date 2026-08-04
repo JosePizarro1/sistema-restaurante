@@ -28,73 +28,133 @@
         <!-- Sección de Menú y Platos -->
         <div class="flex-1 pb-28 lg:pb-6">
             <div class="max-w-4xl mx-auto">
-                <!-- SECCIÓN DE SELECCIÓN DE AMBIENTES Y MESAS -->
-                <div class="bg-white p-5 rounded-[24px] border border-gray-100 shadow-xs mb-6 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] font-extrabold uppercase tracking-wide text-gray-400">Seleccionar Ubicación</span>
-                            <h3 class="text-base font-bold font-['Outfit'] text-[#15202B]">Ambientes & Mesas</h3>
-                        </div>
-                        <span id="badge-mesa-seleccionada" class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-xl border border-amber-200">
-                            🍽️ Selecciona una Mesa
-                        </span>
-                    </div>
 
-                    <!-- Tabs de Ambientes -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-100 custom-scrollbar">
-                        {% for amb in ambientes %}
-                        <button type="button" 
-                                onclick="switchAmbiente({{ amb.id }}, this)" 
-                                class="ambiente-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer {% if forloop.first %}bg-[#15202B] text-white border-[#15202B] shadow-xs{% else %}bg-gray-50 text-gray-600 border-gray-200 hover:text-black{% endif %}">
-                            🏛️ {{ amb.nombre }}
-                        </button>
-                        {% endfor %}
-                        <button type="button" 
-                                onclick="setServicioParaLlevar(this)" 
-                                class="ambiente-tab-btn px-4 py-2 bg-gray-50 text-gray-600 hover:text-black border border-gray-200 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer">
-                            🥡 Para Llevar (Sin Mesa)
-                        </button>
-                    </div>
-
-                    <!-- Grilla de Mesas por Ambiente -->
-                    {% for amb in ambientes %}
-                    <div id="ambiente-grid-{{ amb.id }}" class="ambiente-grid {% if not forloop.first %}hidden{% endif %}">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                            {% for m in amb.mesas.all %}
-                            <button type="button" 
-                                    onclick="seleccionarMesa({{ m.id }}, '{{ m.numero|escapejs }}', '{{ amb.nombre|escapejs }}', '{{ m.estado|escapejs }}')" 
-                                    id="btn-mesa-{{ m.id }}"
-                                    class="mesa-card p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-between h-24 relative cursor-pointer
-                                    {% if m.estado == 'DISPONIBLE' %}
-                                        bg-emerald-50/60 border-emerald-200/80 hover:bg-emerald-100 text-emerald-950 shadow-xs
-                                    {% elif m.estado == 'OCUPADA' %}
-                                        bg-amber-500 text-white border-amber-600 shadow-md opacity-90
-                                    {% else %}
-                                        bg-gray-100 border-gray-200 text-gray-500
-                                    {% endif %}">
-                                <div class="w-full flex justify-between items-center text-[10px] font-extrabold opacity-80">
-                                    <span>👥 {{ m.capacidad }}p</span>
-                                    {% if m.estado == 'DISPONIBLE' %}
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                    {% elif m.estado == 'OCUPADA' %}
-                                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                                    {% endif %}
+                <!-- ============================================================ -->
+                <!-- PASO 1: Selección de Mesa / Para Llevar (Plano Interactivo)   -->
+                <!-- ============================================================ -->
+                <div id="step-seleccion-mesa">
+                    <div class="bg-white p-6 lg:p-8 rounded-[24px] border border-gray-100 shadow-xs space-y-5">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 rounded-full text-xs font-bold border border-amber-200">
+                                    <span>🍽️ Paso 1 — Mapa Interactivo del Salón</span>
                                 </div>
-                                <div class="my-auto">
-                                    <i class="ti ti-table text-xl mb-0.5 block"></i>
-                                    <span class="font-extrabold text-xs block font-['Outfit']">{{ m.numero }}</span>
-                                </div>
-                                <span class="text-[9px] font-extrabold uppercase tracking-wider">
-                                    {% if m.estado == 'DISPONIBLE' %}Disponible{% elif m.estado == 'OCUPADA' %}Ocupada{% else %}{{ m.estado }}{% endif %}
-                                </span>
+                                <h2 class="text-xl lg:text-2xl font-extrabold text-[#15202B] font-['Outfit'] mt-1">Selecciona una Mesa en el Plano</h2>
+                            </div>
+                            <button type="button"
+                                    onclick="setServicioParaLlevar(this)"
+                                    class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-0 shrink-0">
+                                <i class="ti ti-shopping-bag text-base"></i>
+                                <span>🥡 Pedido Para Llevar</span>
                             </button>
-                            {% empty %}
-                            <p class="text-xs text-gray-400 font-bold col-span-6 py-4 text-center">No hay mesas en este ambiente.</p>
+                        </div>
+
+                        <!-- Tabs de Ambientes -->
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-100 custom-scrollbar">
+                            {% for amb in ambientes %}
+                            <button type="button"
+                                    onclick="switchAmbiente({{ amb.id }}, this)"
+                                    class="ambiente-tab-btn px-5 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer {% if forloop.first %}bg-[#15202B] text-white border-[#15202B] shadow-xs{% else %}bg-gray-50 text-gray-600 border-gray-200 hover:text-black{% endif %}">
+                                🏛️ {{ amb.nombre }}
+                            </button>
                             {% endfor %}
                         </div>
+
+                        <!-- Plano Visual de Mesas por Ambiente -->
+                        {% for amb in ambientes %}
+                        <div id="ambiente-grid-{{ amb.id }}" class="ambiente-grid {% if not forloop.first %}hidden{% endif %} space-y-4">
+                            <!-- Switch Vista en Mobile: Plano 2D scrollable vs Grilla Adaptable -->
+                            <div class="w-full h-[460px] sm:h-[500px] rounded-2xl border-2 border-dashed border-gray-200 relative overflow-auto bg-slate-50 shadow-inner p-4 custom-scrollbar" 
+                                 style="background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px); background-size: 20px 20px;">
+                                <div class="sticky top-0 left-0 inline-flex bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-extrabold text-gray-600 border border-gray-200 gap-2 z-20 shadow-xs mb-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 my-auto"></span>
+                                    <span>Toca la mesa deseada (Desliza el mapa si es necesario)</span>
+                                </div>
+
+                                <div class="relative min-w-[650px] min-h-[440px]">
+                                {% for m in amb.mesas.all %}
+                                <button type="button"
+                                        onclick="seleccionarMesa({{ m.id }}, '{{ m.numero|escapejs }}', '{{ amb.nombre|escapejs }}', '{{ m.estado|escapejs }}')"
+                                        id="btn-mesa-{{ m.id }}"
+                                        style="left: {{ m.posicion_x }}px; top: {{ m.posicion_y }}px; width: {{ m.ancho }}px; height: {{ m.alto }}px;"
+                                        class="mesa-card absolute p-2 border-2 transition-all flex flex-col items-center justify-between shadow-md cursor-pointer select-none overflow-hidden active:scale-95
+                                        {% if m.forma == 'CIRCULO' %}rounded-full{% else %}rounded-2xl{% endif %}
+                                        {% if m.estado == 'DISPONIBLE' %}
+                                            bg-white border-emerald-500 active:bg-emerald-100 hover:border-emerald-600 text-emerald-950 shadow-emerald-500/10
+                                        {% elif m.estado == 'OCUPADA' %}
+                                            bg-amber-500 border-amber-600 text-white shadow-amber-500/20 opacity-95
+                                        {% else %}
+                                            bg-gray-100 border-gray-300 text-gray-400
+                                        {% endif %}">
+                                    
+                                    <!-- Header: Capacidad + Indicador -->
+                                    <div class="w-full flex justify-between items-center px-1 text-[10px] font-extrabold pointer-events-none shrink-0">
+                                        <span class="flex items-center gap-0.5 opacity-75">
+                                            <i class="ti ti-users text-[11px]"></i> {{ m.capacidad }}
+                                        </span>
+                                        {% if m.estado == 'DISPONIBLE' %}
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-xs"></span>
+                                        {% elif m.estado == 'OCUPADA' %}
+                                        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Centro: Número de Mesa -->
+                                    <div class="my-auto text-center pointer-events-none flex flex-col items-center justify-center leading-none px-1">
+                                        <span class="font-extrabold text-xs sm:text-sm font-['Outfit'] tracking-tight block">
+                                            {{ m.numero }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Footer: Pill Badge de Estado -->
+                                    <div class="shrink-0 w-full flex justify-center pb-0.5 pointer-events-none">
+                                        <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full leading-none
+                                            {% if m.estado == 'DISPONIBLE' %}
+                                                bg-emerald-100 text-emerald-800
+                                            {% elif m.estado == 'OCUPADA' %}
+                                                bg-white/30 text-white backdrop-blur-xs
+                                            {% else %}
+                                                bg-gray-200 text-gray-600
+                                            {% endif %}">
+                                            {% if m.estado == 'DISPONIBLE' %}Disponible{% elif m.estado == 'OCUPADA' %}Ocupada{% else %}{{ m.estado }}{% endif %}
+                                        </span>
+                                    </div>
+                                </button>
+                                {% empty %}
+                                <div class="h-full flex flex-col items-center justify-center text-center py-20">
+                                    <i class="ti ti-table-off text-4xl text-gray-300 mb-2"></i>
+                                    <p class="text-sm font-bold text-gray-500">No hay mesas configuradas en este ambiente.</p>
+                                </div>
+                                {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
+
+                <!-- ============================================================ -->
+                <!-- PASO 2: Menú + Platos (oculto hasta seleccionar mesa)        -->
+                <!-- ============================================================ -->
+                <div id="step-menu-comanda" class="hidden space-y-6">
+
+                    <!-- Badge de mesa seleccionada con botón Cambiar -->
+                    <div id="barra-mesa-activa" class="flex items-center justify-between bg-white p-4 rounded-[20px] border border-gray-100 shadow-xs">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                <i class="ti ti-table text-xl"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wide text-gray-400">Pedido para</span>
+                                <p id="label-mesa-activa" class="text-sm font-extrabold font-['Outfit'] text-[#15202B]">—</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="cambiarMesa()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                            <i class="ti ti-arrow-back text-sm"></i>
+                            <span>Cambiar</span>
+                        </button>
+                    </div>
+
                 <!-- Banner Destacado: Menú Combo (Precio Fijo S/ 13.00) -->
                 {% if menus %}
                 <div class="mb-6 p-5 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[24px] text-white shadow-lg shadow-amber-500/20 relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -109,8 +169,8 @@
                     </div>
                     {% for m in menus %}
                     <div class="flex items-center gap-3 shrink-0 relative z-10 w-full sm:w-auto justify-between sm:justify-end border-t border-white/20 pt-3 sm:border-0 sm:pt-0">
-                        <button type="button" 
-                                onclick="abrirModalMenu({{ m.id }}, '{{ m.nombre|escapejs }}', {{ m.precio }})" 
+                        <button type="button"
+                                onclick="abrirModalMenu({{ m.id }}, '{{ m.nombre|escapejs }}', {{ m.precio }})"
                                 class="w-full sm:w-auto px-5 py-3 bg-white text-amber-800 font-extrabold text-xs rounded-xl shadow-md hover:bg-amber-50 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-0">
                             <i class="ti ti-plus text-base"></i>
                             <span>Pedir Menú (S/ {{ m.precio }})</span>
@@ -123,14 +183,14 @@
                 <!-- Filtro de Categorías -->
                 {% if categorias %}
                 <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-5 custom-scrollbar">
-                    <button type="button" 
-                            onclick="filtrarCategoria('todas', this)" 
+                    <button type="button"
+                            onclick="filtrarCategoria('todas', this)"
                             class="cat-chip px-4 py-2 bg-primary-custom text-white font-bold text-xs rounded-xl shrink-0 transition-all shadow-xs cursor-pointer border-0">
                         ✨ Todos ({{ platos.count }})
                     </button>
                     {% for cat in categorias %}
-                    <button type="button" 
-                            onclick="filtrarCategoria({{ cat.id }}, this)" 
+                    <button type="button"
+                            onclick="filtrarCategoria({{ cat.id }}, this)"
                             class="cat-chip px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs rounded-xl shrink-0 transition-all cursor-pointer">
                         {{ cat.nombre }}
                     </button>
@@ -141,7 +201,6 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     {% for plato in platos %}
                     <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}">
-                        <!-- Imagen o Placeholder -->
                         {% if plato.imagen_base64 %}
                         <div class="h-36 overflow-hidden">
                             <img src="{{ plato.imagen_base64 }}" alt="{{ plato.imagen_alt|default:plato.nombre }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
@@ -151,7 +210,6 @@
                             <i class="ti ti-photo text-4xl text-gray-300"></i>
                         </div>
                         {% endif %}
-                        <!-- Info del Plato -->
                         <div class="flex flex-col flex-1 justify-between p-4 lg:p-5">
                             <div>
                                 <div class="flex justify-between items-start mb-1">
@@ -177,6 +235,8 @@
                     </div>
                     {% endfor %}
                 </div>
+
+                </div> <!-- /step-menu-comanda -->
             </div>
         </div>
 
@@ -521,23 +581,45 @@
         mesaSeleccionadaId = null;
         document.getElementById('input_mesa_id').value = '';
         actualizarBadgeMesa('🥡 Para Llevar (Sin Mesa)');
-
-        document.querySelectorAll('.ambiente-grid').forEach(g => g.classList.add('hidden'));
-        document.querySelectorAll('.ambiente-tab-btn').forEach(b => {
-            b.className = 'ambiente-tab-btn px-4 py-2 bg-gray-50 text-gray-600 border border-gray-200 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer hover:text-black';
-        });
-        btnEl.className = 'ambiente-tab-btn px-4 py-2 bg-amber-500 text-white border border-amber-600 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs';
+        mostrarPasoMenu('🥡 Pedido Para Llevar');
     }
 
     function seleccionarMesa(id, numero, ambienteNombre, estado) {
         setTipoServicio('MESA');
         mesaSeleccionadaId = id;
         document.getElementById('input_mesa_id').value = id;
-        actualizarBadgeMesa(`🍽️ ${numero} (${ambienteNombre})`);
+
+        // Si numero ya empieza con 'Mesa', no duplicarlo
+        const prefijoMesa = String(numero).toLowerCase().startsWith('mesa') ? '' : 'Mesa ';
+        const textoFormateado = `${prefijoMesa}${numero}`;
+
+        actualizarBadgeMesa(`🍽️ ${textoFormateado} (${ambienteNombre})`);
 
         document.querySelectorAll('.mesa-card').forEach(c => c.classList.remove('ring-4', 'ring-primary-custom'));
         const btnMesa = document.getElementById(`btn-mesa-${id}`);
         if (btnMesa) btnMesa.classList.add('ring-4', 'ring-primary-custom');
+
+        mostrarPasoMenu(`${textoFormateado} — ${ambienteNombre}`);
+    }
+
+    function mostrarPasoMenu(textoMesa) {
+        const stepMesa = document.getElementById('step-seleccion-mesa');
+        const stepMenu = document.getElementById('step-menu-comanda');
+        const labelMesa = document.getElementById('label-mesa-activa');
+
+        if (labelMesa) labelMesa.innerText = textoMesa;
+        if (stepMesa) stepMesa.classList.add('hidden');
+        if (stepMenu) stepMenu.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cambiarMesa() {
+        const stepMesa = document.getElementById('step-seleccion-mesa');
+        const stepMenu = document.getElementById('step-menu-comanda');
+
+        if (stepMenu) stepMenu.classList.add('hidden');
+        if (stepMesa) stepMesa.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function actualizarBadgeMesa(texto) {

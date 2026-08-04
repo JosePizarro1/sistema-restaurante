@@ -53,11 +53,25 @@
     <div class="bg-white p-4 rounded-[24px] border border-gray-100 shadow-xs space-y-4">
         <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-100 custom-scrollbar">
             {% for amb in ambientes %}
-            <button type="button" 
-                    onclick="switchAmbienteEditor({{ amb.id }}, this)" 
-                    class="ambiente-editor-btn px-5 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer {% if forloop.first %}bg-[#15202B] text-white border-[#15202B] shadow-xs{% else %}bg-gray-50 text-gray-600 border-gray-200 hover:text-black{% endif %}">
-                🏛️ {{ amb.nombre }} ({{ amb.mesas.count }} mesas)
-            </button>
+            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden shrink-0">
+                <button type="button" 
+                        onclick="switchAmbienteEditor({{ amb.id }}, this)" 
+                        class="ambiente-editor-btn px-4 py-2.5 text-xs font-bold transition-all shrink-0 cursor-pointer {% if forloop.first %}bg-[#15202B] text-white shadow-xs{% else %}text-gray-600 hover:text-black{% endif %}">
+                    🏛️ {{ amb.nombre }} ({{ amb.mesas.count }} mesas)
+                </button>
+                <button type="button" 
+                        onclick="abrirModalEditarAmbiente({{ amb.id }}, '{{ amb.nombre|escapejs }}')" 
+                        class="px-2 py-2.5 text-gray-400 hover:text-amber-600 transition-colors cursor-pointer border-l border-gray-200/50"
+                        title="Editar nombre del ambiente">
+                    <i class="ti ti-pencil text-xs"></i>
+                </button>
+                <form action="{% url 'ambiente_delete' amb.id %}" method="post" onsubmit="return confirm('¿Eliminar el ambiente {{ amb.nombre }} y sus mesas?')" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="px-2 py-2.5 text-gray-400 hover:text-red-600 transition-colors cursor-pointer" title="Eliminar ambiente">
+                        <i class="ti ti-trash text-xs"></i>
+                    </button>
+                </form>
+            </div>
             {% empty %}
             <p class="text-xs text-gray-400 font-bold py-2">No hay ambientes creados aún.</p>
             {% endfor %}
@@ -127,6 +141,24 @@
     </div>
 </div>
 
+<!-- MODAL EDITAR AMBIENTE -->
+<div id="modal-editar-ambiente" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl space-y-4 border border-gray-100">
+        <h3 class="text-lg font-extrabold text-[#15202B] font-['Outfit']">Editar Ambiente</h3>
+        <form id="form-editar-ambiente" action="" method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Nombre del Ambiente</label>
+                <input type="text" id="edit-ambiente-nombre" name="nombre" placeholder="Ej. Salón Principal" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="cerrarModalEditarAmbiente()" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold text-xs rounded-xl cursor-pointer">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- MODAL NUEVA MESA -->
 <div id="modal-mesa" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-[24px] max-w-md w-full p-6 shadow-2xl space-y-4 border border-gray-100">
@@ -183,6 +215,12 @@
 
     function abrirModalAmbiente() { document.getElementById('modal-ambiente').classList.remove('hidden'); }
     function cerrarModalAmbiente() { document.getElementById('modal-ambiente').classList.add('hidden'); }
+    function abrirModalEditarAmbiente(id, nombre) {
+        document.getElementById('form-editar-ambiente').action = `/ambientes/editar/${id}/`;
+        document.getElementById('edit-ambiente-nombre').value = nombre;
+        document.getElementById('modal-editar-ambiente').classList.remove('hidden');
+    }
+    function cerrarModalEditarAmbiente() { document.getElementById('modal-editar-ambiente').classList.add('hidden'); }
     function abrirModalMesa() { document.getElementById('modal-mesa').classList.remove('hidden'); }
     function cerrarModalMesa() { document.getElementById('modal-mesa').classList.add('hidden'); }
 

@@ -573,3 +573,26 @@ def ambiente_create_view(request):
     return redirect('mesas_configuracion')
 
 
+@superuser_required
+@require_POST
+def ambiente_edit_view(request, ambiente_id):
+    ambiente = get_object_or_404(Ambiente, id=ambiente_id)
+    nombre = request.POST.get('nombre', '').strip()
+    if nombre:
+        ambiente.nombre = nombre
+        ambiente.save()
+        messages.success(request, f'Ambiente actualizado a "{nombre}".')
+    return redirect('mesas_configuracion')
+
+
+@superuser_required
+@require_POST
+def ambiente_delete_view(request, ambiente_id):
+    ambiente = get_object_or_404(Ambiente, id=ambiente_id)
+    nombre = ambiente.nombre
+    ambiente.delete()
+    messages.success(request, f'Ambiente "{nombre}" y sus mesas fueron eliminados.')
+    return redirect('mesas_configuracion')
+
+
+
