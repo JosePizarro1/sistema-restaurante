@@ -1,7 +1,8 @@
 import base64
+import calendar
 import io
 import json
-
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -9,9 +10,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
 from django.db.models import Count, Sum
 from django.db.models.deletion import ProtectedError
+from django.db.models.functions import TruncDate
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_POST
 from PIL import Image
 
 from .models import Categoria, Configuracion, DetalleOrden, Menu, Orden, Plato
@@ -44,11 +48,11 @@ def pos_view(request):
     platos = Plato.objects.filter(activo=True)
     if request.method == 'POST':
         items_json = request.POST.get('items_json')
-        
+
         if not items_json:
             messages.error(request, 'Debe agregar al menos un plato a la orden.')
             return redirect('pos')
-            
+
         items = json.loads(items_json)
         if not items:
             messages.error(request, 'La orden no puede estar vacía.')
@@ -97,7 +101,7 @@ def pos_view(request):
                 })
 
         orden = Orden.objects.create(
-            metodo_pago='PENDIENTE', 
+            metodo_pago='PENDIENTE',
             estado='PENDIENTE',
             tipo_servicio=tipo_servicio,
             nota_general=nota_general
@@ -153,9 +157,6 @@ def cocina_view(request):
     ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu')
     return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
 
-from django.http import JsonResponse
-
-
 @login_required
 def api_cocina_ordenes(request):
     ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu').order_by('fecha_creacion')
@@ -198,16 +199,10 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
         return JsonResponse({'status': 'ok'})
     return redirect('cocina')
 
-import calendar
-from datetime import date, timedelta
-
-from django.db.models.functions import TruncDate
-
-
 @login_required
 def reportes_view(request):
     hoy = timezone.localdate()
-    
+
     # Parámetros de filtro por GET
     mes_str = request.GET.get('mes')
     anio_str = request.GET.get('anio')
@@ -238,7 +233,7 @@ def reportes_view(request):
         except ValueError:
             mes_sel = hoy.month
             anio_sel = hoy.year
-        
+
         fecha_inicio = date(anio_sel, mes_sel, 1)
         _, num_days = calendar.monthrange(anio_sel, mes_sel)
         fecha_fin = date(anio_sel, mes_sel, num_days)
@@ -287,7 +282,7 @@ def reportes_view(request):
     # Generar secuencia de días completa para línea continua
     labels_dias = []
     data_ventas = []
-    
+
     curr = fecha_inicio
     while curr <= fecha_fin:
         labels_dias.append(curr.strftime('%d/%m'))
@@ -404,8 +399,6 @@ def plato_edit_view(request, plato_id):
         return redirect('platos_list')
 
     return render(request, 'platos/form.html', {'plato': plato, 'categorias': categorias, 'titulo': f'Editar {plato.nombre}'})
-
-from django.views.decorators.http import require_POST
 
 
 @superuser_required

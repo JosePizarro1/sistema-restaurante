@@ -1,0 +1,7 @@
+[tool.ruff]
+extend-exclude = ["*/migrations/*"]
+line-length = 180
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
