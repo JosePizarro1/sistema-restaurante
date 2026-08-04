@@ -132,6 +132,8 @@ class DetalleOrden(models.Model):
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2)
     nota = models.CharField(max_length=255, blank=True, default='')
     es_para_llevar = models.BooleanField(default=False)
+    entrada_para_llevar = models.BooleanField(default=False)
+    segundo_para_llevar = models.BooleanField(default=False)
 
     class Meta:
         # Exactly one of plato/menu must be set. clean() enforces this at the
@@ -153,16 +155,21 @@ class DetalleOrden(models.Model):
 
     def taper_count(self):
         if self.menu_id is not None:
-            return 2 * self.cantidad
-        # Packability is a property of the CATEGORY, not of Menu presence.
-        # This keeps sopa/segundo a-la-carte lines surcharged even when no
-        # active Menu exists (e.g. sole menu deactivated or seed not run).
-        if (
-            self.plato_id is not None
-            and self.plato.categoria_id is not None
-            and self.plato.categoria.packable
-        ):
-            return self.cantidad
+            count = 0
+            if self.entrada_para_llevar:
+                count += self.cantidad
+            if self.segundo_para_llevar:
+                count += self.cantidad
+            if count == 0 and (self.es_para_llevar or self.orden.tipo_servicio == 'LLEVAR'):
+                count = 2 * self.cantidad
+            return count
+        if self.es_para_llevar or self.orden.tipo_servicio == 'LLEVAR':
+            if (
+                self.plato_id is not None
+                and self.plato.categoria_id is not None
+                and self.plato.categoria.packable
+            ):
+                return self.cantidad
         return 0
 
     def clean(self):
