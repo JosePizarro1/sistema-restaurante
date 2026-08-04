@@ -57,6 +57,14 @@
                 Categorías
             </span>
         </a>
+        <a class="nav-item flex lg:flex-col items-center gap-3 lg:gap-1 p-3 lg:p-0 rounded-xl group text-decoration-none transition-all" href="{% url 'mesas_configuracion' %}">
+            <div class="w-10 h-10 lg:w-14 lg:h-14 {% if 'mesa' in request.resolver_match.url_name %}bg-primary-custom text-white shadow-lg shadow-[#F56B45]/20{% else %}text-gray-400 group-hover:bg-gray-50{% endif %} rounded-xl lg:rounded-[18px] flex items-center justify-center transition-all">
+                <i class="ti ti-table text-xl lg:text-2xl"></i>
+            </div>
+            <span class="text-sm lg:text-[10px] font-bold uppercase tracking-wider {% if 'mesa' in request.resolver_match.url_name %}text-primary-custom{% else %}text-gray-500 group-hover:text-gray-700{% endif %}">
+                Mesas
+            </span>
+        </a>
         {% endif %}
     </nav>
 

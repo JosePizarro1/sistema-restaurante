@@ -103,10 +103,21 @@ class Mesa(models.Model):
         ('RESERVADA', 'Reservada'),
     )
 
+    FORMAS_MESA = (
+        ('RECTANGULO', 'Rectángulo'),
+        ('CIRCULO', 'Círculo'),
+        ('CUADRADO', 'Cuadrado'),
+    )
+
     ambiente = models.ForeignKey(Ambiente, related_name='mesas', on_delete=models.CASCADE)
     numero = models.CharField(max_length=20)
     capacidad = models.PositiveIntegerField(default=4)
     estado = models.CharField(max_length=20, choices=ESTADOS_MESA, default='DISPONIBLE')
+    posicion_x = models.IntegerField(default=20)
+    posicion_y = models.IntegerField(default=20)
+    ancho = models.IntegerField(default=110)
+    alto = models.IntegerField(default=80)
+    forma = models.CharField(max_length=20, choices=FORMAS_MESA, default='RECTANGULO')
     activo = models.BooleanField(default=True)
 
     class Meta:

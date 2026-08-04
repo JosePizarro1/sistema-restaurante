@@ -13,7 +13,7 @@ urlpatterns = [
     path('cocina/', views.cocina_view, name='cocina'),
     path('cocina/estado/<int:orden_id>/<str:nuevo_estado>/', views.cambiar_estado_orden, name='cambiar_estado'),
     path('api/cocina-ordenes/', views.api_cocina_ordenes, name='api_cocina_ordenes'),
-    
+
     # CRUD Platos (Superusuario)
     path('platos/', views.platos_list_view, name='platos_list'),
     path('platos/nuevo/', views.plato_create_view, name='plato_create'),
@@ -26,6 +26,13 @@ urlpatterns = [
     path('categorias/nueva/', views.categoria_create_view, name='categoria_create'),
     path('categorias/editar/<int:categoria_id>/', views.categoria_edit_view, name='categoria_edit'),
     path('categorias/eliminar/<int:categoria_id>/', views.categoria_delete_view, name='categoria_delete'),
+
+    # Editor Drag & Drop y CRUD Mesas / Ambientes (Superusuario)
+    path('mesas/configuracion/', views.mesas_configuracion_view, name='mesas_configuracion'),
+    path('api/mesas/guardar-posiciones/', views.api_guardar_posiciones_mesas, name='api_guardar_posiciones_mesas'),
+    path('mesas/crear/', views.mesa_create_view, name='mesa_create'),
+    path('mesas/eliminar/<int:mesa_id>/', views.mesa_delete_view, name='mesa_delete'),
+    path('ambientes/crear/', views.ambiente_create_view, name='ambiente_create'),
 ]
 
 

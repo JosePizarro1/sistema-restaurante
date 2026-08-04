@@ -941,3 +941,17 @@ class AmbienteAndMesaTest(TestCase):
         orden = Orden.objects.first()
         self.assertIsNone(orden.mesa)
         self.assertEqual(orden.tipo_servicio, 'LLEVAR')
+
+    def test_guardar_posiciones_mesas_api(self):
+        User.objects.create_superuser(username='admin_pos', password='password123')
+        self.client.login(username='admin_pos', password='password123')
+        payload = {'mesas': [{'id': self.mesa.id, 'x': 150, 'y': 220}]}
+        response = self.client.post(
+            reverse('api_guardar_posiciones_mesas'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.mesa.refresh_from_db()
+        self.assertEqual(self.mesa.posicion_x, 150)
+        self.assertEqual(self.mesa.posicion_y, 220)

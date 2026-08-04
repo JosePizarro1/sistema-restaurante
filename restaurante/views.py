@@ -509,3 +509,67 @@ def categoria_delete_view(request, categoria_id):
     return redirect('categorias_list')
 
 
+@superuser_required
+def mesas_configuracion_view(request):
+    ambientes = Ambiente.objects.filter(activo=True).prefetch_related('mesas')
+    return render(request, 'mesas/configuracion.html', {'ambientes': ambientes})
+
+
+@superuser_required
+@require_POST
+def api_guardar_posiciones_mesas(request):
+    try:
+        data = json.loads(request.body)
+        for item in data.get('mesas', []):
+            mesa_id = item.get('id')
+            x = item.get('x', 0)
+            y = item.get('y', 0)
+            Mesa.objects.filter(id=mesa_id).update(posicion_x=x, posicion_y=y)
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:  # noqa: BLE001
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@superuser_required
+@require_POST
+def mesa_create_view(request):
+    ambiente_id = request.POST.get('ambiente_id')
+    numero = request.POST.get('numero', '').strip()
+    capacidad = request.POST.get('capacidad', '4').strip()
+    forma = request.POST.get('forma', 'RECTANGULO')
+
+    if ambiente_id and numero:
+        ambiente = get_object_or_404(Ambiente, id=ambiente_id)
+        Mesa.objects.create(
+            ambiente=ambiente,
+            numero=numero,
+            capacidad=int(capacidad or 4),
+            forma=forma,
+            posicion_x=40,
+            posicion_y=40,
+        )
+        messages.success(request, f'Mesa "{numero}" creada en {ambiente.nombre}.')
+    return redirect('mesas_configuracion')
+
+
+@superuser_required
+@require_POST
+def mesa_delete_view(request, mesa_id):
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    numero = mesa.numero
+    mesa.delete()
+    messages.success(request, f'Mesa "{numero}" eliminada.')
+    return redirect('mesas_configuracion')
+
+
+@superuser_required
+@require_POST
+def ambiente_create_view(request):
+    nombre = request.POST.get('nombre', '').strip()
+    if nombre:
+        orden = Ambiente.objects.count() + 1
+        Ambiente.objects.create(nombre=nombre, orden=orden)
+        messages.success(request, f'Ambiente "{nombre}" creado con éxito.')
+    return redirect('mesas_configuracion')
+
+

@@ -13,22 +13,22 @@ SEED_AMBIENTES = [
         'nombre': 'Salón Principal',
         'orden': 1,
         'mesas': [
-            {'numero': 'Mesa 1', 'capacidad': 4},
-            {'numero': 'Mesa 2', 'capacidad': 4},
-            {'numero': 'Mesa 3', 'capacidad': 4},
-            {'numero': 'Mesa 4', 'capacidad': 6},
-            {'numero': 'Mesa 5', 'capacidad': 6},
-            {'numero': 'Mesa 6', 'capacidad': 2},
+            {'numero': 'Mesa 1', 'capacidad': 4, 'posicion_x': 30, 'posicion_y': 30, 'forma': 'RECTANGULO'},
+            {'numero': 'Mesa 2', 'capacidad': 4, 'posicion_x': 180, 'posicion_y': 30, 'forma': 'RECTANGULO'},
+            {'numero': 'Mesa 3', 'capacidad': 4, 'posicion_x': 330, 'posicion_y': 30, 'forma': 'RECTANGULO'},
+            {'numero': 'Mesa 4', 'capacidad': 6, 'posicion_x': 30, 'posicion_y': 150, 'forma': 'RECTANGULO'},
+            {'numero': 'Mesa 5', 'capacidad': 6, 'posicion_x': 180, 'posicion_y': 150, 'forma': 'RECTANGULO'},
+            {'numero': 'Mesa 6', 'capacidad': 2, 'posicion_x': 330, 'posicion_y': 150, 'forma': 'CIRCULO'},
         ]
     },
     {
         'nombre': 'Terraza',
         'orden': 2,
         'mesas': [
-            {'numero': 'Mesa 7', 'capacidad': 4},
-            {'numero': 'Mesa 8', 'capacidad': 4},
-            {'numero': 'Mesa 9', 'capacidad': 2},
-            {'numero': 'Mesa 10', 'capacidad': 8},
+            {'numero': 'Mesa 7', 'capacidad': 4, 'posicion_x': 40, 'posicion_y': 40, 'forma': 'CIRCULO'},
+            {'numero': 'Mesa 8', 'capacidad': 4, 'posicion_x': 200, 'posicion_y': 40, 'forma': 'CIRCULO'},
+            {'numero': 'Mesa 9', 'capacidad': 2, 'posicion_x': 40, 'posicion_y': 160, 'forma': 'CUADRADO'},
+            {'numero': 'Mesa 10', 'capacidad': 8, 'posicion_x': 200, 'posicion_y': 160, 'forma': 'RECTANGULO'},
         ]
     },
 ]
@@ -166,9 +166,18 @@ class Command(BaseCommand):
                 mesa, _ = Mesa.objects.get_or_create(
                     ambiente=amb,
                     numero=m_data['numero'],
-                    defaults={'capacidad': m_data['capacidad']}
+                    defaults={
+                        'capacidad': m_data['capacidad'],
+                        'posicion_x': m_data.get('posicion_x', 20),
+                        'posicion_y': m_data.get('posicion_y', 20),
+                        'forma': m_data.get('forma', 'RECTANGULO'),
+                    }
                 )
                 mesa.capacidad = m_data['capacidad']
+                if reset or mesa.posicion_x == 20:
+                    mesa.posicion_x = m_data.get('posicion_x', 20)
+                    mesa.posicion_y = m_data.get('posicion_y', 20)
+                    mesa.forma = m_data.get('forma', 'RECTANGULO')
                 mesa.activo = True
                 mesa.save()
             self.stdout.write(self.style.SUCCESS(f'Ambiente listo: {amb.nombre} ({len(amb_data["mesas"])} mesas)'))
