@@ -82,6 +82,42 @@ class Configuracion(models.Model):
         return obj
 
 
+class Ambiente(models.Model):
+    nombre = models.CharField(max_length=50, unique=True)
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ('orden', 'nombre')
+        verbose_name = 'Ambiente'
+        verbose_name_plural = 'Ambientes'
+
+    def __str__(self):
+        return self.nombre
+
+
+class Mesa(models.Model):
+    ESTADOS_MESA = (
+        ('DISPONIBLE', 'Disponible'),
+        ('OCUPADA', 'Ocupada'),
+        ('RESERVADA', 'Reservada'),
+    )
+
+    ambiente = models.ForeignKey(Ambiente, related_name='mesas', on_delete=models.CASCADE)
+    numero = models.CharField(max_length=20)
+    capacidad = models.PositiveIntegerField(default=4)
+    estado = models.CharField(max_length=20, choices=ESTADOS_MESA, default='DISPONIBLE')
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ('ambiente', 'numero')
+        verbose_name = 'Mesa'
+        verbose_name_plural = 'Mesas'
+
+    def __str__(self):
+        return f"{self.numero} ({self.ambiente.nombre})"
+
+
 class Orden(models.Model):
     METODOS_PAGO = (
         ('PENDIENTE', 'Pendiente de Pago'),
@@ -102,6 +138,7 @@ class Orden(models.Model):
         ('LLEVAR', 'Para Llevar'),
     )
 
+    mesa = models.ForeignKey(Mesa, related_name='ordenes', on_delete=models.SET_NULL, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='PENDIENTE')
     estado = models.CharField(max_length=20, choices=ESTADOS_ORDEN, default='PENDIENTE')

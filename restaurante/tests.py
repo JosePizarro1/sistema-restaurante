@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Categoria, Configuracion, DetalleOrden, Menu, Orden, Plato
+from .models import Ambiente, Categoria, Configuracion, DetalleOrden, Menu, Mesa, Orden, Plato
 
 
 class CategoriaModelTest(TestCase):
@@ -878,3 +878,66 @@ class AdminRegistrationTest(TestCase):
         self.assertEqual(change_response.status_code, 302)
         cfg.refresh_from_db()
         self.assertEqual(cfg.recargo_por_taper, Decimal("2.50"))
+
+
+class AmbienteAndMesaTest(TestCase):
+    """Tests for Ambiente and Mesa models, order table binding, and table status transitions."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mesero', password='password123')
+        self.client.login(username='mesero', password='password123')
+        self.ambiente = Ambiente.objects.create(nombre="Salón Principal", orden=1)
+        self.mesa = Mesa.objects.create(ambiente=self.ambiente, numero="Mesa 1", capacidad=4)
+        self.cat = Categoria.objects.create(nombre="Segundo", orden=1, packable=True)
+        self.plato = Plato.objects.create(nombre="Lomo Saltado", precio=11.00, categoria=self.cat)
+
+    def test_crear_orden_con_mesa_cambia_estado_a_ocupada(self):
+        items_json = json.dumps([{
+            'id': self.plato.id,
+            'tipo': 'plato',
+            'cantidad': 1,
+            'precio': 11.00,
+            'es_para_llevar': False,
+            'nota': ''
+        }])
+        response = self.client.post(reverse('pos'), {
+            'tipo_servicio': 'MESA',
+            'mesa_id': str(self.mesa.id),
+            'items_json': items_json,
+            'nota_general': 'Mesa 1'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.mesa.refresh_from_db()
+        self.assertEqual(self.mesa.estado, 'OCUPADA')
+        orden = Orden.objects.first()
+        self.assertEqual(orden.mesa, self.mesa)
+
+    def test_cobrar_orden_libera_mesa_a_disponible(self):
+        orden = Orden.objects.create(tipo_servicio='MESA', mesa=self.mesa, estado='LISTO')
+        self.mesa.estado = 'OCUPADA'
+        self.mesa.save()
+
+        response = self.client.post(reverse('cobrar_orden', args=[orden.id]), {'metodo_pago': 'EFECTIVO'})
+        self.assertEqual(response.status_code, 302)
+        self.mesa.refresh_from_db()
+        self.assertEqual(self.mesa.estado, 'DISPONIBLE')
+
+    def test_orden_para_llevar_no_requiere_mesa(self):
+        items_json = json.dumps([{
+            'id': self.plato.id,
+            'tipo': 'plato',
+            'cantidad': 1,
+            'precio': 11.00,
+            'es_para_llevar': True,
+            'nota': ''
+        }])
+        response = self.client.post(reverse('pos'), {
+            'tipo_servicio': 'LLEVAR',
+            'items_json': items_json,
+            'nota_general': 'Para Llevar'
+        })
+        self.assertEqual(response.status_code, 302)
+        orden = Orden.objects.first()
+        self.assertIsNone(orden.mesa)
+        self.assertEqual(orden.tipo_servicio, 'LLEVAR')

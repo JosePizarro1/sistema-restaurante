@@ -28,6 +28,73 @@
         <!-- Sección de Menú y Platos -->
         <div class="flex-1 pb-28 lg:pb-6">
             <div class="max-w-4xl mx-auto">
+                <!-- SECCIÓN DE SELECCIÓN DE AMBIENTES Y MESAS -->
+                <div class="bg-white p-5 rounded-[24px] border border-gray-100 shadow-xs mb-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wide text-gray-400">Seleccionar Ubicación</span>
+                            <h3 class="text-base font-bold font-['Outfit'] text-[#15202B]">Ambientes & Mesas</h3>
+                        </div>
+                        <span id="badge-mesa-seleccionada" class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-xl border border-amber-200">
+                            🍽️ Selecciona una Mesa
+                        </span>
+                    </div>
+
+                    <!-- Tabs de Ambientes -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-100 custom-scrollbar">
+                        {% for amb in ambientes %}
+                        <button type="button" 
+                                onclick="switchAmbiente({{ amb.id }}, this)" 
+                                class="ambiente-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer {% if forloop.first %}bg-[#15202B] text-white border-[#15202B] shadow-xs{% else %}bg-gray-50 text-gray-600 border-gray-200 hover:text-black{% endif %}">
+                            🏛️ {{ amb.nombre }}
+                        </button>
+                        {% endfor %}
+                        <button type="button" 
+                                onclick="setServicioParaLlevar(this)" 
+                                class="ambiente-tab-btn px-4 py-2 bg-gray-50 text-gray-600 hover:text-black border border-gray-200 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer">
+                            🥡 Para Llevar (Sin Mesa)
+                        </button>
+                    </div>
+
+                    <!-- Grilla de Mesas por Ambiente -->
+                    {% for amb in ambientes %}
+                    <div id="ambiente-grid-{{ amb.id }}" class="ambiente-grid {% if not forloop.first %}hidden{% endif %}">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                            {% for m in amb.mesas.all %}
+                            <button type="button" 
+                                    onclick="seleccionarMesa({{ m.id }}, '{{ m.numero|escapejs }}', '{{ amb.nombre|escapejs }}', '{{ m.estado|escapejs }}')" 
+                                    id="btn-mesa-{{ m.id }}"
+                                    class="mesa-card p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-between h-24 relative cursor-pointer
+                                    {% if m.estado == 'DISPONIBLE' %}
+                                        bg-emerald-50/60 border-emerald-200/80 hover:bg-emerald-100 text-emerald-950 shadow-xs
+                                    {% elif m.estado == 'OCUPADA' %}
+                                        bg-amber-500 text-white border-amber-600 shadow-md opacity-90
+                                    {% else %}
+                                        bg-gray-100 border-gray-200 text-gray-500
+                                    {% endif %}">
+                                <div class="w-full flex justify-between items-center text-[10px] font-extrabold opacity-80">
+                                    <span>👥 {{ m.capacidad }}p</span>
+                                    {% if m.estado == 'DISPONIBLE' %}
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    {% elif m.estado == 'OCUPADA' %}
+                                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="my-auto">
+                                    <i class="ti ti-table text-xl mb-0.5 block"></i>
+                                    <span class="font-extrabold text-xs block font-['Outfit']">{{ m.numero }}</span>
+                                </div>
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider">
+                                    {% if m.estado == 'DISPONIBLE' %}Disponible{% elif m.estado == 'OCUPADA' %}Ocupada{% else %}{{ m.estado }}{% endif %}
+                                </span>
+                            </button>
+                            {% empty %}
+                            <p class="text-xs text-gray-400 font-bold col-span-6 py-4 text-center">No hay mesas en este ambiente.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
                 <!-- Banner Destacado: Menú Combo (Precio Fijo S/ 13.00) -->
                 {% if menus %}
                 <div class="mb-6 p-5 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[24px] text-white shadow-lg shadow-amber-500/20 relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -167,6 +234,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="items_json" id="items_json">
                         <input type="hidden" name="tipo_servicio" id="input_tipo_servicio" value="MESA">
+                        <input type="hidden" name="mesa_id" id="input_mesa_id" value="">
                         <input type="hidden" name="nota_general" id="input_nota_general" value="">
                         <button type="button" onclick="enviarOrden()" class="w-full btn-primary-custom py-4 rounded-[18px] font-bold text-sm shadow-lg shadow-[#F56B45]/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
                             <i class="ti ti-send text-lg"></i>
@@ -435,6 +503,52 @@
     let carrito = [];
     let tipoServicioActual = 'MESA';
     let notaGeneralActual = '';
+    let mesaSeleccionadaId = null;
+
+    function switchAmbiente(ambId, btnEl) {
+        document.querySelectorAll('.ambiente-grid').forEach(g => g.classList.add('hidden'));
+        const grid = document.getElementById(`ambiente-grid-${ambId}`);
+        if (grid) grid.classList.remove('hidden');
+
+        document.querySelectorAll('.ambiente-tab-btn').forEach(b => {
+            b.className = 'ambiente-tab-btn px-4 py-2 bg-gray-50 text-gray-600 border border-gray-200 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer hover:text-black';
+        });
+        btnEl.className = 'ambiente-tab-btn px-4 py-2 bg-[#15202B] text-white border border-[#15202B] rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs';
+    }
+
+    function setServicioParaLlevar(btnEl) {
+        setTipoServicio('LLEVAR');
+        mesaSeleccionadaId = null;
+        document.getElementById('input_mesa_id').value = '';
+        actualizarBadgeMesa('🥡 Para Llevar (Sin Mesa)');
+
+        document.querySelectorAll('.ambiente-grid').forEach(g => g.classList.add('hidden'));
+        document.querySelectorAll('.ambiente-tab-btn').forEach(b => {
+            b.className = 'ambiente-tab-btn px-4 py-2 bg-gray-50 text-gray-600 border border-gray-200 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer hover:text-black';
+        });
+        btnEl.className = 'ambiente-tab-btn px-4 py-2 bg-amber-500 text-white border border-amber-600 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs';
+    }
+
+    function seleccionarMesa(id, numero, ambienteNombre, estado) {
+        setTipoServicio('MESA');
+        mesaSeleccionadaId = id;
+        document.getElementById('input_mesa_id').value = id;
+        actualizarBadgeMesa(`🍽️ ${numero} (${ambienteNombre})`);
+
+        document.querySelectorAll('.mesa-card').forEach(c => c.classList.remove('ring-4', 'ring-primary-custom'));
+        const btnMesa = document.getElementById(`btn-mesa-${id}`);
+        if (btnMesa) btnMesa.classList.add('ring-4', 'ring-primary-custom');
+    }
+
+    function actualizarBadgeMesa(texto) {
+        const badge = document.getElementById('badge-mesa-seleccionada');
+        if (badge) badge.innerText = texto;
+        const inputNotaDt = document.getElementById('nota-general-input-dt');
+        const inputNotaMb = document.getElementById('nota-general-input-mb');
+        if (inputNotaDt && !inputNotaDt.value) inputNotaDt.value = texto;
+        if (inputNotaMb && !inputNotaMb.value) inputNotaMb.value = texto;
+        syncNotaGeneral(texto);
+    }
 
     function setTipoServicio(tipo) {
         tipoServicioActual = tipo;
@@ -934,7 +1048,7 @@
         const ticketContent = document.getElementById(ticketElementId).outerHTML;
         const win = window.open('', '', 'height=600,width=450');
         win.document.write('<html><head><title>Imprimir Ticket</title>');
-        win.document.write('<script src="https://cdn.tailwindcss.com"></script>');
+        win.document.write('<script src="https://cdn.tailwindcss.com"></' + 'script>');
         win.document.write('</head><body class="p-4 flex justify-center bg-white">');
         win.document.write(ticketContent);
         win.document.write('</body></html>');

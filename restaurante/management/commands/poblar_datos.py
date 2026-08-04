@@ -6,7 +6,32 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from PIL import Image, ImageDraw, ImageFont
 
-from restaurante.models import Categoria, Configuracion, Menu, Plato
+from restaurante.models import Ambiente, Categoria, Configuracion, Menu, Mesa, Plato
+
+SEED_AMBIENTES = [
+    {
+        'nombre': 'Salón Principal',
+        'orden': 1,
+        'mesas': [
+            {'numero': 'Mesa 1', 'capacidad': 4},
+            {'numero': 'Mesa 2', 'capacidad': 4},
+            {'numero': 'Mesa 3', 'capacidad': 4},
+            {'numero': 'Mesa 4', 'capacidad': 6},
+            {'numero': 'Mesa 5', 'capacidad': 6},
+            {'numero': 'Mesa 6', 'capacidad': 2},
+        ]
+    },
+    {
+        'nombre': 'Terraza',
+        'orden': 2,
+        'mesas': [
+            {'numero': 'Mesa 7', 'capacidad': 4},
+            {'numero': 'Mesa 8', 'capacidad': 4},
+            {'numero': 'Mesa 9', 'capacidad': 2},
+            {'numero': 'Mesa 10', 'capacidad': 8},
+        ]
+    },
+]
 
 # ---------------------------------------------------------------------------
 # Deterministic seed catalog (docs/contexto/catalogo.md).
@@ -117,11 +142,36 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         reset = options['reset']
         self._ensure_superuser()
+        self._reconcile_ambientes_y_mesas(reset)
         self._reconcile_categorias(reset)
         self._reconcile_platos(reset)
         self._reconcile_menu(reset)
         self._ensure_configuracion(reset)
         self.stdout.write(self.style.SUCCESS('Semilla completada.'))
+
+    def _reconcile_ambientes_y_mesas(self, reset):
+        if reset:
+            Ambiente.objects.update(activo=False)
+            Mesa.objects.update(activo=False)
+        for amb_data in SEED_AMBIENTES:
+            amb, _ = Ambiente.objects.get_or_create(
+                nombre=amb_data['nombre'],
+                defaults={'orden': amb_data['orden']}
+            )
+            amb.orden = amb_data['orden']
+            amb.activo = True
+            amb.save()
+
+            for m_data in amb_data['mesas']:
+                mesa, _ = Mesa.objects.get_or_create(
+                    ambiente=amb,
+                    numero=m_data['numero'],
+                    defaults={'capacidad': m_data['capacidad']}
+                )
+                mesa.capacidad = m_data['capacidad']
+                mesa.activo = True
+                mesa.save()
+            self.stdout.write(self.style.SUCCESS(f'Ambiente listo: {amb.nombre} ({len(amb_data["mesas"])} mesas)'))
 
     def _ensure_superuser(self):
         if not User.objects.filter(username='admin').exists():

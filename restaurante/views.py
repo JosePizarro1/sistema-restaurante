@@ -18,7 +18,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 from PIL import Image
 
-from .models import Categoria, Configuracion, DetalleOrden, Menu, Orden, Plato
+from .models import Ambiente, Categoria, Configuracion, DetalleOrden, Menu, Mesa, Orden, Plato
 from .pusher_utils import trigger_pusher_event
 
 
@@ -100,12 +100,22 @@ def pos_view(request):
                     'es_para_llevar': es_para_llevar,
                 })
 
+        mesa_id = request.POST.get('mesa_id')
+        mesa = None
+        if tipo_servicio == 'MESA' and mesa_id:
+            mesa = Mesa.objects.filter(id=mesa_id, activo=True).first()
+
         orden = Orden.objects.create(
             metodo_pago='PENDIENTE',
             estado='PENDIENTE',
             tipo_servicio=tipo_servicio,
-            nota_general=nota_general
+            nota_general=nota_general,
+            mesa=mesa,
         )
+
+        if mesa:
+            mesa.estado = 'OCUPADA'
+            mesa.save()
 
         for linea in lineas:
             DetalleOrden.objects.create(orden=orden, **linea)
@@ -121,14 +131,16 @@ def pos_view(request):
         messages.success(request, f'Orden #{orden.id} enviada a cocina con éxito!')
         return redirect('pos')
 
+    ambientes = Ambiente.objects.filter(activo=True).prefetch_related('mesas')
     platos = Plato.objects.filter(activo=True).select_related('categoria')
     entradas = [p for p in platos if p.categoria and p.categoria.nombre == 'Entrada']
     segundos = [p for p in platos if p.categoria and p.categoria.nombre == 'Segundo']
-    ordenes_listas = Orden.objects.filter(estado='LISTO').prefetch_related('detalles__plato', 'detalles__menu')
+    ordenes_listas = Orden.objects.filter(estado='LISTO').select_related('mesa').prefetch_related('detalles__plato', 'detalles__menu')
     categorias = Categoria.objects.filter(activo=True).order_by('orden', 'nombre')
     menus = Menu.objects.filter(activo=True).select_related('categoria_entrada', 'categoria_segundo')
     configuracion = Configuracion.get()
     return render(request, 'pos.html', {
+        'ambientes': ambientes,
         'platos': platos,
         'menus': menus,
         'entradas': entradas,
@@ -148,6 +160,11 @@ def cobrar_orden(request, orden_id):
             orden.metodo_pago = metodo_pago
             orden.estado = 'PAGADO'
             orden.save()
+            if orden.mesa:
+                ordenes_activas = Orden.objects.filter(mesa=orden.mesa, estado__in=['PENDIENTE', 'LISTO']).exclude(id=orden.id).exists()
+                if not ordenes_activas:
+                    orden.mesa.estado = 'DISPONIBLE'
+                    orden.mesa.save()
             trigger_pusher_event('actualizar-cocina', {'orden_id': orden.id, 'nuevo_estado': 'PAGADO'})
             messages.success(request, f'¡Orden #{orden.id} cobrada y cerrada exitosamente con {orden.get_metodo_pago_display()}!')
     return redirect('pos')
