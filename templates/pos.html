@@ -28,6 +28,31 @@
         <!-- Sección de Menú y Platos -->
         <div class="flex-1 pb-28 lg:pb-6">
             <div class="max-w-4xl mx-auto">
+                <!-- Banner Destacado: Menú Combo (Precio Fijo S/ 13.00) -->
+                {% if menus %}
+                <div class="mb-6 p-5 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[24px] text-white shadow-lg shadow-amber-500/20 relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-white mb-2">
+                            <span>🍱 Menú Completo Recomendado</span>
+                        </div>
+                        {% for m in menus %}
+                        <h3 class="text-xl font-extrabold font-['Outfit']">{{ m.nombre }} — S/ {{ m.precio }}</h3>
+                        <p class="text-xs text-amber-100 mt-1 font-medium">Incluye {{ m.categoria_entrada.nombre }} + {{ m.categoria_segundo.nombre }} juntos a precio fijo.</p>
+                        {% endfor %}
+                    </div>
+                    {% for m in menus %}
+                    <div class="flex items-center gap-3 shrink-0 relative z-10 w-full sm:w-auto justify-between sm:justify-end border-t border-white/20 pt-3 sm:border-0 sm:pt-0">
+                        <button type="button" 
+                                onclick="agregarMenuAlCarrito({{ m.id }}, '{{ m.nombre|escapejs }} Combo', {{ m.precio }})" 
+                                class="w-full sm:w-auto px-5 py-3 bg-white text-amber-800 font-extrabold text-xs rounded-xl shadow-md hover:bg-amber-50 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-0">
+                            <i class="ti ti-plus text-base"></i>
+                            <span>Pedir Menú (S/ {{ m.precio }})</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- Filtro de Categorías -->
                 {% if categorias %}
                 <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-5 custom-scrollbar">
@@ -369,12 +394,13 @@
 
     // ---- Carrito ----
     function agregarAlCarrito(id, nombre, precio, imagen_base64 = '') {
-        let item = carrito.find(i => i.id === id);
+        let item = carrito.find(i => (!i.tipo || i.tipo === 'plato') && i.id === id);
         if (item) {
             item.cantidad += 1;
         } else {
             carrito.push({ 
                 id: id, 
+                tipo: 'plato',
                 nombre: nombre, 
                 precio: parseFloat(precio), 
                 cantidad: 1, 
@@ -384,37 +410,61 @@
             });
         }
         renderCarrito();
-        // Feedback visual: bounce en el FAB
         const fab = document.getElementById('fab-carrito');
-        fab.classList.add('scale-110');
-        setTimeout(() => fab.classList.remove('scale-110'), 150);
+        if (fab) {
+            fab.classList.add('scale-110');
+            setTimeout(() => fab.classList.remove('scale-110'), 150);
+        }
     }
 
-    function cambiarCantidad(id, delta) {
-        let item = carrito.find(i => i.id === id);
+    function agregarMenuAlCarrito(menuId, nombre, precio) {
+        let item = carrito.find(i => i.tipo === 'menu' && i.id === menuId);
         if (item) {
-            item.cantidad += delta;
-            if (item.cantidad <= 0) carrito = carrito.filter(i => i.id !== id);
+            item.cantidad += 1;
+        } else {
+            carrito.push({ 
+                id: menuId, 
+                tipo: 'menu',
+                nombre: nombre, 
+                precio: parseFloat(precio), 
+                cantidad: 1, 
+                nota: '',
+                imagen_base64: '',
+                es_para_llevar: (tipoServicioActual === 'LLEVAR')
+            });
+        }
+        renderCarrito();
+        const fab = document.getElementById('fab-carrito');
+        if (fab) {
+            fab.classList.add('scale-110');
+            setTimeout(() => fab.classList.remove('scale-110'), 150);
+        }
+    }
+
+    function cambiarCantidad(idx, delta) {
+        if (carrito[idx]) {
+            carrito[idx].cantidad += delta;
+            if (carrito[idx].cantidad <= 0) {
+                carrito.splice(idx, 1);
+            }
         }
         renderCarrito();
     }
 
-    function cambiarCantidadMobile(id, delta) {
-        cambiarCantidad(id, delta);
+    function cambiarCantidadMobile(idx, delta) {
+        cambiarCantidad(idx, delta);
         renderCarritoMobile();
     }
 
-    function actualizarNota(id, nuevaNota) {
-        let item = carrito.find(i => i.id === id);
-        if (item) {
-            item.nota = nuevaNota;
+    function actualizarNota(idx, nuevaNota) {
+        if (carrito[idx]) {
+            carrito[idx].nota = nuevaNota;
         }
     }
 
-    function toggleLlevarItem(id) {
-        let item = carrito.find(i => i.id === id);
-        if (item) {
-            item.es_para_llevar = !item.es_para_llevar;
+    function toggleLlevarItem(idx) {
+        if (carrito[idx]) {
+            carrito[idx].es_para_llevar = !carrito[idx].es_para_llevar;
             renderCarrito();
             renderCarritoMobile();
         }
@@ -431,14 +481,18 @@
             `;
         } else {
             container.innerHTML = '';
-            carrito.forEach(item => {
+            carrito.forEach((item, idx) => {
                 let subtotal = item.precio * item.cantidad;
                 total += subtotal;
                 const notaEscaped = (item.nota || '').replace(/"/g, '&quot;');
                 const esLlevar = item.es_para_llevar;
+                const esMenu = (item.tipo === 'menu');
+                const badgeTag = esMenu 
+                    ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-extrabold rounded-md border border-amber-200">🍱 MENÚ COMBO</span>`
+                    : '';
                 const imgHTML = item.imagen_base64 
                     ? `<img src="${item.imagen_base64}" class="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
-                    : `<div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-gray-400 border border-gray-200/60"><i class="ti ti-salad text-base"></i></div>`;
+                    : `<div class="w-10 h-10 rounded-xl ${esMenu ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200/60'} flex items-center justify-center shrink-0 border"><i class="${esMenu ? 'ti ti-category' : 'ti ti-salad'} text-base"></i></div>`;
 
                 container.innerHTML += `
                     <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
@@ -448,9 +502,10 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
                                         <h4 class="text-xs font-bold text-[#15202B] mb-0 truncate">${item.nombre}</h4>
+                                        ${badgeTag}
                                         <!-- Toggle por plato Llevar vs Mesa -->
                                         <button type="button" 
-                                                onclick="toggleLlevarItem(${item.id})" 
+                                                onclick="toggleLlevarItem(${idx})" 
                                                 class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${esLlevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}"
                                                 title="Cambiar entre Mesa o Para Llevar este plato">
                                             ${esLlevar ? '🥡 Llevar' : '🍽️ Mesa'}
@@ -461,9 +516,9 @@
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-                                    <button onclick="${targetFn}(${item.id}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
+                                    <button onclick="${targetFn}(${idx}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
                                     <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
-                                    <button onclick="${targetFn}(${item.id}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                                    <button onclick="${targetFn}(${idx}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
                                 </div>
                                 <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
                             </div>
@@ -473,8 +528,8 @@
                             <i class="ti ti-note text-amber-500 absolute left-2.5 text-xs"></i>
                             <input type="text" 
                                    value="${notaEscaped}" 
-                                   onchange="actualizarNota(${item.id}, this.value)"
-                                   placeholder="Nota (ej: sin cebolla, bien cocido)..." 
+                                   onchange="actualizarNota(${idx}, this.value)"
+                                   placeholder="${esMenu ? 'Entrada + Segundo elegidos (ej: Sopa + Lomo)...' : 'Nota (ej: sin cebolla, bien cocido)...'}" 
                                    class="w-full pl-7 pr-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-amber-400">
                         </div>
                     </div>
