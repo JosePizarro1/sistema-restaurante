@@ -84,6 +84,9 @@ def pos_view(request):
                     'entrada_para_llevar': entrada_llevar,
                     'segundo_para_llevar': segundo_llevar,
                 })
+                    'entrada_para_llevar': entrada_llevar,
+                    'segundo_para_llevar': segundo_llevar,
+                })
             else:
                 plato = get_object_or_404(Plato, id=item['id'], activo=True)
                 lineas.append({
