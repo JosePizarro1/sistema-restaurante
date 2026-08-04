@@ -616,6 +616,13 @@
             console.log('⚡ Suscripto exitosamente al canal: cocina-channel (POS)');
         });
 
+        channel.bind('actualizar-cocina', function(data) {
+            if (data.nuevo_estado === 'LISTO' || data.nuevo_estado === 'PAGADO') {
+                window.location.reload();
+            }
+        });
+    }
+
     // --- Modal Interactivo de Menú Combo ---
     let currentMenuModalData = { id: null, nombre: '', precio: 13.00 };
     let entradaElegida = null;
