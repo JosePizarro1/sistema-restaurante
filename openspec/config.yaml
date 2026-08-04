@@ -1,0 +1,46 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Django 6.0.7 (Python 3.13), plain Django views + templates (no DRF).
+  DB: SQLite local default; DATABASE_URL in .env points to Neon Postgres (remote).
+  Architecture: Monolith, one app "restaurante" (models: Categoria, Plato, Orden,
+    DetalleOrden); class-based + function views; templates in templates/; Pusher
+    for real-time kitchen view; Vercel deployment (api/index.py WSGI).
+  Testing: Django built-in test runner (manage.py test), 11 tests (model + view
+    TestCase). Linter/formatter: ruff. No type checker, no pytest, no coverage.
+  Style: Spanish UI copy, es-pe locale, America/Lima tz. Loose/expressive Spanish.
+
+testing:
+  strict_tdd: true
+  runner: "django"
+  test_command: "DATABASE_URL=sqlite:///./db.sqlite3 python manage.py test"
+  unit: true
+  integration: true
+  e2e: false
+  coverage: false
+  linter: "ruff check ."
+  formatter: "ruff format ."
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - State DB migration impact (SQLite local vs Neon remote)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing Django view/model patterns
+    tdd: true
+    test_command: "DATABASE_URL=sqlite:///./db.sqlite3 python manage.py test"
+  verify:
+    test_command: "DATABASE_URL=sqlite:///./db.sqlite3 python manage.py test"
+    build_command: "python manage.py check"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
