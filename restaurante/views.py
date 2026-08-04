@@ -69,12 +69,20 @@ def pos_view(request):
             es_para_llevar = bool(item.get('es_para_llevar', False))
             if item.get('tipo') == 'menu':
                 menu = get_object_or_404(Menu, id=item['id'], activo=True)
+                entrada_llevar = bool(item.get('entrada_para_llevar', False))
+                segundo_llevar = bool(item.get('segundo_para_llevar', False))
+                # If legacy payload set es_para_llevar=True without component flags, default both to True
+                if es_para_llevar and not entrada_llevar and not segundo_llevar:
+                    entrada_llevar = True
+                    segundo_llevar = True
                 lineas.append({
                     'menu': menu,
                     'precio_unitario': menu.precio,
                     'cantidad': cantidad,
                     'nota': nota,
-                    'es_para_llevar': es_para_llevar,
+                    'es_para_llevar': (entrada_llevar or segundo_llevar),
+                    'entrada_para_llevar': entrada_llevar,
+                    'segundo_para_llevar': segundo_llevar,
                 })
             else:
                 plato = get_object_or_404(Plato, id=item['id'], activo=True)

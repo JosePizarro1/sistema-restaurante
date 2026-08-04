@@ -470,6 +470,24 @@
         }
     }
 
+    function toggleEntradaItem(idx) {
+        if (carrito[idx]) {
+            carrito[idx].entrada_para_llevar = !carrito[idx].entrada_para_llevar;
+            carrito[idx].es_para_llevar = (carrito[idx].entrada_para_llevar || carrito[idx].segundo_para_llevar);
+            renderCarrito();
+            renderCarritoMobile();
+        }
+    }
+
+    function toggleSegundoItem(idx) {
+        if (carrito[idx]) {
+            carrito[idx].segundo_para_llevar = !carrito[idx].segundo_para_llevar;
+            carrito[idx].es_para_llevar = (carrito[idx].entrada_para_llevar || carrito[idx].segundo_para_llevar);
+            renderCarrito();
+            renderCarritoMobile();
+        }
+    }
+
     function buildItemsHTML(container, targetFn) {
         let total = 0;
         if (carrito.length === 0) {
@@ -482,7 +500,15 @@
         } else {
             container.innerHTML = '';
             carrito.forEach((item, idx) => {
-                let subtotal = item.precio * item.cantidad;
+                let tapers = 0;
+                if (item.tipo === 'menu') {
+                    if (item.entrada_para_llevar) tapers += item.cantidad;
+                    if (item.segundo_para_llevar) tapers += item.cantidad;
+                } else if (item.es_para_llevar) {
+                    tapers += item.cantidad;
+                }
+                let recargoTaper = tapers * 1.00;
+                let subtotal = (item.precio * item.cantidad) + recargoTaper;
                 total += subtotal;
                 const notaEscaped = (item.nota || '').replace(/"/g, '&quot;');
                 const esLlevar = item.es_para_llevar;
@@ -494,6 +520,31 @@
                     ? `<img src="${item.imagen_base64}" class="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
                     : `<div class="w-10 h-10 rounded-xl ${esMenu ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200/60'} flex items-center justify-center shrink-0 border"><i class="${esMenu ? 'ti ti-category' : 'ti ti-salad'} text-base"></i></div>`;
 
+                let llevarButtonsHTML = '';
+                if (esMenu) {
+                    llevarButtonsHTML = `
+                        <button type="button" 
+                                onclick="toggleEntradaItem(${idx})" 
+                                class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${item.entrada_para_llevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}">
+                            ${item.entrada_para_llevar ? '🥡 Entrada Llevar (+S/ 1)' : '🍽️ Entrada Mesa'}
+                        </button>
+                        <button type="button" 
+                                onclick="toggleSegundoItem(${idx})" 
+                                class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${item.segundo_para_llevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}">
+                            ${item.segundo_para_llevar ? '🥡 Segundo Llevar (+S/ 1)' : '🍽️ Segundo Mesa'}
+                        </button>
+                    `;
+                } else {
+                    llevarButtonsHTML = `
+                        <button type="button" 
+                                onclick="toggleLlevarItem(${idx})" 
+                                class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${esLlevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}"
+                                title="Cambiar entre Mesa o Para Llevar este plato">
+                            ${esLlevar ? '🥡 Llevar (+S/ 1)' : '🍽️ Mesa'}
+                        </button>
+                    `;
+                }
+
                 container.innerHTML += `
                     <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
                         <div class="flex items-center justify-between gap-2">
@@ -503,15 +554,9 @@
                                     <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
                                         <h4 class="text-xs font-bold text-[#15202B] mb-0 truncate">${item.nombre}</h4>
                                         ${badgeTag}
-                                        <!-- Toggle por plato Llevar vs Mesa -->
-                                        <button type="button" 
-                                                onclick="toggleLlevarItem(${idx})" 
-                                                class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${esLlevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}"
-                                                title="Cambiar entre Mesa o Para Llevar este plato">
-                                            ${esLlevar ? '🥡 Llevar' : '🍽️ Mesa'}
-                                        </button>
+                                        ${llevarButtonsHTML}
                                     </div>
-                                    <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u</span>
+                                    <span class="text-[11px] text-gray-400">S/ ${item.precio.toFixed(2)} c/u ${recargoTaper > 0 ? `<span class="text-amber-600 font-bold">(+S/ ${recargoTaper.toFixed(2)} táper)</span>` : ''}</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
@@ -529,7 +574,7 @@
                             <input type="text" 
                                    value="${notaEscaped}" 
                                    onchange="actualizarNota(${idx}, this.value)"
-                                   placeholder="${esMenu ? 'Entrada + Segundo elegidos (ej: Sopa + Lomo)...' : 'Nota (ej: sin cebolla, bien cocido)...'}" 
+                                   placeholder="${esMenu ? 'Notas especiales...' : 'Nota (ej: sin cebolla, bien cocido)...'}" 
                                    class="w-full pl-7 pr-2 py-1 bg-white border border-gray-200 rounded-lg text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-amber-400">
                         </div>
                     </div>
@@ -627,11 +672,15 @@
     let currentMenuModalData = { id: null, nombre: '', precio: 13.00 };
     let entradaElegida = null;
     let segundoElegido = null;
+    let entradaParaLlevar = false;
+    let segundoParaLlevar = false;
 
     function abrirModalMenu(menuId, menuNombre, menuPrecio) {
         currentMenuModalData = { id: menuId, nombre: menuNombre, precio: menuPrecio };
         entradaElegida = null;
         segundoElegido = null;
+        entradaParaLlevar = (tipoServicioActual === 'LLEVAR');
+        segundoParaLlevar = (tipoServicioActual === 'LLEVAR');
         
         document.querySelectorAll('.btn-entrada-item').forEach(btn => {
             btn.className = 'btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
@@ -640,11 +689,46 @@
             btn.className = 'btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
         });
 
+        actualizarBotonesLlevarModal();
+
         document.getElementById('lbl-entrada-sel').textContent = '(Obligatorio)';
         document.getElementById('lbl-segundo-sel').textContent = '(Obligatorio)';
         document.getElementById('btn-confirmar-menu-combo').disabled = true;
 
         document.getElementById('modal-menu-combo').classList.remove('hidden');
+    }
+
+    function toggleEntradaLlevarModal() {
+        entradaParaLlevar = !entradaParaLlevar;
+        actualizarBotonesLlevarModal();
+    }
+
+    function toggleSegundoLlevarModal() {
+        segundoParaLlevar = !segundoParaLlevar;
+        actualizarBotonesLlevarModal();
+    }
+
+    function actualizarBotonesLlevarModal() {
+        const btnEnt = document.getElementById('btn-toggle-ent-llevar');
+        if (btnEnt) {
+            if (entradaParaLlevar) {
+                btnEnt.className = 'py-2.5 px-3 bg-amber-500 text-white rounded-xl font-bold text-xs border border-amber-600 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all';
+                btnEnt.innerHTML = '🥡 Entrada Llevar (+S/ 1.00)';
+            } else {
+                btnEnt.className = 'py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all';
+                btnEnt.innerHTML = '🍽️ Entrada en Mesa';
+            }
+        }
+        const btnSeg = document.getElementById('btn-toggle-seg-llevar');
+        if (btnSeg) {
+            if (segundoParaLlevar) {
+                btnSeg.className = 'py-2.5 px-3 bg-amber-500 text-white rounded-xl font-bold text-xs border border-amber-600 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all';
+                btnSeg.innerHTML = '🥡 Segundo Llevar (+S/ 1.00)';
+            } else {
+                btnSeg.className = 'py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all';
+                btnSeg.innerHTML = '🍽️ Segundo en Mesa';
+            }
+        }
     }
 
     function cerrarModalMenu() {
@@ -684,7 +768,7 @@
         if (!entradaElegida || !segundoElegido) return;
         
         const nombreCombo = `Menú (${entradaElegida} + ${segundoElegido})`;
-        const notaCombo = `Entrada: ${entradaElegida} | Segundo: ${segundoElegido}`;
+        const notaCombo = `Entrada: ${entradaElegida} ${entradaParaLlevar ? '(Llevar)' : '(Mesa)'} | Segundo: ${segundoElegido} ${segundoParaLlevar ? '(Llevar)' : '(Mesa)'}`;
         
         carrito.push({
             id: currentMenuModalData.id,
@@ -693,8 +777,10 @@
             precio: parseFloat(currentMenuModalData.precio),
             cantidad: 1,
             nota: notaCombo,
-            imagen_base64: '',
-            es_para_llevar: (tipoServicioActual === 'LLEVAR')
+            entrada_para_llevar: entradaParaLlevar,
+            segundo_para_llevar: segundoParaLlevar,
+            es_para_llevar: (entradaParaLlevar || segundoParaLlevar),
+            imagen_base64: ''
         });
 
         renderCarrito();
@@ -763,6 +849,27 @@
                     {% empty %}
                     <p class="text-xs text-gray-400 italic col-span-2">No hay segundos registrados.</p>
                     {% endfor %}
+                </div>
+            </div>
+
+            <!-- Paso 3: Selección de Para Llevar por componente -->
+            <div>
+                <label class="block text-xs font-extrabold text-gray-500 uppercase tracking-wider mb-2.5">
+                    3. Empaque / Para Llevar (+S/ 1.00 por táper)
+                </label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button type="button" 
+                            id="btn-toggle-ent-llevar"
+                            onclick="toggleEntradaLlevarModal()" 
+                            class="py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                        🍽️ Entrada en Mesa
+                    </button>
+                    <button type="button" 
+                            id="btn-toggle-seg-llevar"
+                            onclick="toggleSegundoLlevarModal()" 
+                            class="py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                        🍽️ Segundo en Mesa
+                    </button>
                 </div>
             </div>
         </div>
