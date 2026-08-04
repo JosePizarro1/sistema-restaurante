@@ -1,12 +1,13 @@
 import base64
 import io
+from typing import ClassVar
 
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from PIL import Image
 
-from .models import Categoria, DetalleOrden, Orden, Plato
+from .models import Categoria, Configuracion, DetalleOrden, Menu, Orden, Plato
 
 
 @admin.register(Categoria)
@@ -21,7 +22,7 @@ class PlatoForm(forms.ModelForm):
 
     class Meta:
         model = Plato
-        fields = ['nombre', 'categoria', 'precio', 'activo', 'imagen_alt']
+        fields: ClassVar[list[str]] = ['nombre', 'categoria', 'precio', 'activo', 'imagen_alt']
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -71,14 +72,37 @@ class PlatoAdmin(admin.ModelAdmin):
     preview_admin.short_description = 'Imagen actual'
 
 
+@admin.register(Menu)
+class MenuAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'precio', 'categoria_entrada', 'categoria_segundo', 'activo')
+    list_filter = ('activo', 'categoria_entrada', 'categoria_segundo')
+    search_fields = ('nombre',)
+    list_editable = ('precio', 'activo')
+    fields = ('nombre', 'precio', 'categoria_entrada', 'categoria_segundo', 'activo')
+
+
+@admin.register(Configuracion)
+class ConfiguracionAdmin(admin.ModelAdmin):
+    list_display = ('recargo_por_taper',)
+    fields = ('recargo_por_taper',)
+
+    # Singleton: the row is created/updated by the seed (id=1); admins edit the
+    # existing row in place but must not be able to add another one.
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class DetalleOrdenInline(admin.TabularInline):
     model = DetalleOrden
     extra = 0
-    readonly_fields = ('plato', 'cantidad', 'precio_unitario', 'nota')
+    readonly_fields = ('plato', 'menu', 'cantidad', 'precio_unitario', 'nota')
 
 
 @admin.register(Orden)
 class OrdenAdmin(admin.ModelAdmin):
     list_display = ('id', 'fecha_creacion', 'metodo_pago', 'estado', 'total')
     list_filter = ('metodo_pago', 'estado', 'fecha_creacion')
-    inlines = [DetalleOrdenInline]
+    inlines: ClassVar[list[object]] = [DetalleOrdenInline]

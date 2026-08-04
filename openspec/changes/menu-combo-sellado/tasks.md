@@ -47,14 +47,14 @@ Chain strategy: pending
 
 ## Phase 3: Wire & Admin
 
-- [ ] 3.1 RED test: `pos_view` POST with menu line + LLEVAR persists `orden.total` with surcharge; MESA without (view scenarios).
-- [ ] 3.2 GREEN `restaurante/views.py`: `pos_view` builds details (plato OR menu) then `orden.total = orden.computar_total()`.
-- [ ] 3.3 RED admin smoke: Menu + Configuracion registered/editable (full admin editability scenario).
-- [ ] 3.4 GREEN `restaurante/admin.py`: register `Menu`; `Configuracion` admin (`has_add_permission=False`); update `DetalleOrdenInline` for `menu`.
+- [x] 3.1 RED test: `pos_view` POST with menu line + LLEVAR persists `orden.total` with surcharge; MESA without (view scenarios).
+- [x] 3.2 GREEN `restaurante/views.py`: `pos_view` builds details (plato OR menu) then `orden.total = orden.computar_total()`.
+- [x] 3.3 RED admin smoke: Menu + Configuracion registered/editable (full admin editability scenario).
+- [x] 3.4 GREEN `restaurante/admin.py`: register `Menu`; `Configuracion` admin (`has_add_permission=False`); update `DetalleOrdenInline` for `menu`.
 
 ## Phase 4: Verify
 
-- [ ] 4.1 Run full suite: `DATABASE_URL=sqlite:///./db.sqlite3 python manage.py test` (all pass).
-- [ ] 4.2 `python manage.py check` + `ruff check .` clean.
+- [x] 4.1 Run full suite: `DATABASE_URL=sqlite:///./db.sqlite3 python manage.py test` (all pass).
+- [x] 4.2 `python manage.py check` + `ruff check .` clean.
 
 Chain boundary (slice 1): Tasks 1.1–1.9 → PR 1. Slice 2: 2.1–2.3 → PR 2. Slice 3: 3.1–4.2 → PR 3.

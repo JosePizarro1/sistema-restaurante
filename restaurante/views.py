@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from PIL import Image
 
-from .models import Categoria, DetalleOrden, Orden, Plato
+from .models import Categoria, DetalleOrden, Menu, Orden, Plato
 from .pusher_utils import trigger_pusher_event
 
 
@@ -55,29 +55,51 @@ def pos_view(request):
         tipo_servicio = request.POST.get('tipo_servicio', 'MESA')
         nota_general = request.POST.get('nota_general', '').strip()
 
+        # Resolve EVERY item (existence, active, cantidad int) BEFORE creating
+        # the Orden so a malformed payload raises (Http404/ValueError) before
+        # any PENDIENTE row is persisted — no orphan order on partial failure.
+        lineas = []
+        for item in items:
+            # A sealed-combo line is signalled by item['tipo'] == 'menu' and
+            # prices as a unit at the Menu's fixed price. Anything else is a
+            # plato line (a la carte). Either way exactly one of plato/menu is
+            # set, satisfying the DetalleOrden CheckConstraint.
+            cantidad = int(item['cantidad'])
+            nota = item.get('nota', '').strip()
+            es_para_llevar = bool(item.get('es_para_llevar', False))
+            if item.get('tipo') == 'menu':
+                menu = get_object_or_404(Menu, id=item['id'], activo=True)
+                lineas.append({
+                    'menu': menu,
+                    'precio_unitario': menu.precio,
+                    'cantidad': cantidad,
+                    'nota': nota,
+                    'es_para_llevar': es_para_llevar,
+                })
+            else:
+                plato = get_object_or_404(Plato, id=item['id'], activo=True)
+                lineas.append({
+                    'plato': plato,
+                    'precio_unitario': plato.precio,
+                    'cantidad': cantidad,
+                    'nota': nota,
+                    'es_para_llevar': es_para_llevar,
+                })
+
         orden = Orden.objects.create(
             metodo_pago='PENDIENTE', 
             estado='PENDIENTE',
             tipo_servicio=tipo_servicio,
             nota_general=nota_general
         )
-        total = 0
 
-        for item in items:
-            plato = get_object_or_404(Plato, id=item['id'])
-            cantidad = int(item['cantidad'])
-            subtotal = plato.precio * cantidad
-            total += subtotal
-            DetalleOrden.objects.create(
-                orden=orden,
-                plato=plato,
-                cantidad=cantidad,
-                precio_unitario=plato.precio,
-                nota=item.get('nota', '').strip(),
-                es_para_llevar=bool(item.get('es_para_llevar', False))
-            )
+        for linea in lineas:
+            DetalleOrden.objects.create(orden=orden, **linea)
 
-        orden.total = total
+        # Total is computed on the model method so the "para llevar" taper
+        # surcharge (LLEVAR only) and Menu unit pricing are deterministic and
+        # unit-testable, matching the stored `total` DB field contract.
+        orden.total = orden.computar_total()
         orden.save()
 
         trigger_pusher_event('nueva-orden', {'orden_id': orden.id})
@@ -85,7 +107,7 @@ def pos_view(request):
         messages.success(request, f'Orden #{orden.id} enviada a cocina con éxito!')
         return redirect('pos')
 
-    ordenes_listas = Orden.objects.filter(estado='LISTO').prefetch_related('detalles__plato')
+    ordenes_listas = Orden.objects.filter(estado='LISTO').prefetch_related('detalles__plato', 'detalles__menu')
     categorias = Categoria.objects.filter(activo=True).order_by('orden', 'nombre')
     return render(request, 'pos.html', {'platos': platos, 'ordenes_listas': ordenes_listas, 'categorias': categorias})
 
@@ -104,7 +126,7 @@ def cobrar_orden(request, orden_id):
 
 @login_required
 def cocina_view(request):
-    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato')
+    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu')
     return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
 
 from django.http import JsonResponse
@@ -112,13 +134,16 @@ from django.http import JsonResponse
 
 @login_required
 def api_cocina_ordenes(request):
-    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato').order_by('fecha_creacion')
+    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu').order_by('fecha_creacion')
     data = []
     for orden in ordenes_pendientes:
         detalles = []
         for det in orden.detalles.all():
+            # A Menu line has plato=None; resolve the display name safely so a
+            # sold Menu doesn't 500 the kitchen feed.
+            nombre = det.plato.nombre if det.plato_id else (det.menu.nombre if det.menu_id else '')
             detalles.append({
-                'plato_nombre': det.plato.nombre,
+                'plato_nombre': nombre,
                 'cantidad': det.cantidad,
                 'nota': det.nota,
                 'es_para_llevar': det.es_para_llevar,

@@ -1,5 +1,7 @@
+import json
 from decimal import Decimal
 
+from django.contrib import admin as dj_admin
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -658,3 +660,221 @@ class PoblarDatosResetTest(TestCase):
 
         self.assertEqual(Menu.objects.get(nombre="Menú").precio, Decimal("13.00"))
         self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("1.00"))
+
+
+class PosViewTotalTest(TestCase):
+    """Task 3.1 — pos_view computes `orden.total` via `Orden.computar_total()`:
+    a Menu line is priced as a unit, and the "para llevar" taper surcharge is
+    applied only when `tipo_servicio='LLEVAR'` (view scenarios: "LLEVAR order
+    total includes surcharge", "MESA order total has no surcharge")."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mozo', password='password123')
+        self.client.login(username='mozo', password='password123')
+        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
+        # precio default 13.00
+        self.menu = Menu.objects.create(
+            categoria_entrada=self.entrada,
+            categoria_segundo=self.segundo,
+        )
+
+    def _post_orden(self, tipo_servicio):
+        items = json.dumps([
+            {'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': '',
+             'es_para_llevar': (tipo_servicio == 'LLEVAR')}
+        ])
+        return self.client.post(reverse('pos'), {
+            'items_json': items,
+            'tipo_servicio': tipo_servicio,
+            'nota_general': '',
+        })
+
+    def test_llevar_menu_line_total_includes_surcharge(self):
+        response = self._post_orden('LLEVAR')
+        self.assertEqual(response.status_code, 302)
+        orden = Orden.objects.get()
+        detalle = orden.detalles.get()
+        # menu line prices as a unit (not the sum of sopa + segundo)
+        self.assertEqual(detalle.menu, self.menu)
+        self.assertIsNone(detalle.plato)
+        self.assertEqual(detalle.precio_unitario, Decimal("13.00"))
+        # 13.00 + (2 tapers × 1.00) = 15.00
+        self.assertEqual(orden.total, Decimal("15.00"))
+
+    def test_mesa_menu_line_total_has_no_surcharge(self):
+        response = self._post_orden('MESA')
+        self.assertEqual(response.status_code, 302)
+        orden = Orden.objects.get()
+        # 13.00 fixed menu price, no taper surcharge on MESA
+        self.assertEqual(orden.total, Decimal("13.00"))
+
+    def test_llevar_plato_line_flow_through_computar_total(self):
+        # Backward-compatible plato path (no 'tipo' key → defaults to plato):
+        # a packable plato line must also be priced via computar_total, so a
+        # LLEVAR a-la-carte second incurs its 1-taper surcharge.
+        plato = Plato.objects.create(
+            nombre="Lomo Saltado", precio=Decimal("11.00"), categoria=self.segundo
+        )
+        items = json.dumps([
+            {'id': plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': True}
+        ])
+        response = self.client.post(reverse('pos'), {
+            'items_json': items,
+            'tipo_servicio': 'LLEVAR',
+            'nota_general': '',
+        })
+        self.assertEqual(response.status_code, 302)
+        orden = Orden.objects.get()
+        detalle = orden.detalles.get()
+        self.assertEqual(detalle.plato, plato)
+        self.assertIsNone(detalle.menu)
+        # 11.00 + (1 taper × 1.00) = 12.00
+        self.assertEqual(orden.total, Decimal("12.00"))
+
+
+class Pr3MenuComboFixesTest(TestCase):
+    """PR3 adversarial-review fixes for the Menu sealed-combo wiring.
+
+    Issue 1: kitchen endpoints must not crash on a Menu line (plato=None) —
+    `api_cocina_ordenes` must return the menu name and the cocina page must
+    render it. Issue 2: inactive Menu/Plato must be rejected at the write
+    boundary (404). Issue 3: a malformed payload must not persist an orphan
+    PENDIENTE Orden."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mozo', password='password123')
+        self.client.login(username='mozo', password='password123')
+        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
+        # Unique name (not the default "Menú") so template assertions target the
+        # order-detail line and not the sidebar navigation "Menú" label.
+        self.menu = Menu.objects.create(
+            nombre="Menú Sellado Único",
+            categoria_entrada=self.entrada,
+            categoria_segundo=self.segundo,
+        )
+
+    def _post_menu_order(self):
+        items = json.dumps([
+            {'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}
+        ])
+        return self.client.post(reverse('pos'), {
+            'items_json': items,
+            'tipo_servicio': 'MESA',
+            'nota_general': '',
+        })
+
+    # --- Issue 1: kitchen endpoints and Menu lines ---
+    def test_api_cocina_ordenes_returns_menu_name_for_menu_line(self):
+        # A PENDIENTE order with a Menu line (plato=None) must serialize to the
+        # kitchen API with the menu's name, NOT raise AttributeError (HTTP 500).
+        self._post_menu_order()
+        response = self.client.get(reverse('api_cocina_ordenes'))
+        self.assertEqual(response.status_code, 200)
+        ordenes = response.json()['ordenes']
+        self.assertEqual(len(ordenes), 1)
+        detalle = ordenes[0]['detalles'][0]
+        self.assertEqual(detalle['plato_nombre'], self.menu.nombre)
+
+    def test_cocina_page_renders_menu_name_for_menu_line(self):
+        self._post_menu_order()
+        response = self.client.get(reverse('cocina'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.menu.nombre)
+
+    def test_api_cocina_ordenes_returns_plato_name_for_plato_line(self):
+        # Triangulation: the fallback must pick the plato name when a plato line
+        # is present (never blindly the menu).
+        plato = Plato.objects.create(
+            nombre="Lomo Saltado", precio=11.00, categoria=self.segundo
+        )
+        items = json.dumps([{'id': plato.id, 'cantidad': 1, 'nota': ''}])
+        self.client.post(reverse('pos'), {
+            'items_json': items, 'tipo_servicio': 'MESA', 'nota_general': '',
+        })
+        response = self.client.get(reverse('api_cocina_ordenes'))
+        self.assertEqual(response.status_code, 200)
+        detalle = response.json()['ordenes'][0]['detalles'][0]
+        self.assertEqual(detalle['plato_nombre'], plato.nombre)
+
+    # --- Issue 2: inactive Menu/Plato rejected at write boundary ---
+    def test_post_inactive_menu_returns_404(self):
+        self.menu.activo = False
+        self.menu.save()
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1}])
+        response = self.client.post(reverse('pos'), {
+            'items_json': items, 'tipo_servicio': 'MESA',
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Orden.objects.count(), 0)
+
+    def test_post_inactive_plato_returns_404(self):
+        plato = Plato.objects.create(nombre="Huevo", precio=1.50)
+        plato.activo = False
+        plato.save()
+        items = json.dumps([{'id': plato.id, 'cantidad': 1}])
+        response = self.client.post(reverse('pos'), {
+            'items_json': items, 'tipo_servicio': 'MESA',
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Orden.objects.count(), 0)
+
+    # --- Issue 3: malformed payload must not persist an orphan Orden ---
+    def test_post_invalid_item_id_creates_no_orden(self):
+        items = json.dumps([{'id': 999999, 'tipo': 'menu', 'cantidad': 1}])
+        response = self.client.post(reverse('pos'), {
+            'items_json': items, 'tipo_servicio': 'MESA',
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Orden.objects.count(), 0)
+
+    def test_post_invalid_cantidad_creates_no_orden(self):
+        # int('abc') raises ValueError BEFORE any Orden row may be persisted.
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 'abc'}])
+        with self.assertRaises(ValueError):
+            self.client.post(reverse('pos'), {
+                'items_json': items, 'tipo_servicio': 'MESA',
+            })
+        self.assertEqual(Orden.objects.count(), 0)
+
+
+class AdminRegistrationTest(TestCase):
+    """Task 3.3 — Menu + Configuracion registered in Django admin and editable
+    (scenario: "Admin can manage all catalog entities"). Configuracion remains
+    a singleton: not addable, but its recargo value is editable in place."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_superuser(username='admin', password='password123')
+        self.client.login(username='admin', password='password123')
+
+    def test_menu_and_configuracion_registered_in_site(self):
+        self.assertTrue(dj_admin.site.is_registered(Menu))
+        self.assertTrue(dj_admin.site.is_registered(Configuracion))
+
+    def test_menu_add_page_renders_editable_fields(self):
+        entrada = Categoria.objects.create(nombre="Entrada", orden=1)
+        segundo = Categoria.objects.create(nombre="Segundo", orden=2)
+        Menu.objects.create(categoria_entrada=entrada, categoria_segundo=segundo)
+        response = self.client.get(reverse('admin:restaurante_menu_add'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="categoria_entrada"')
+        self.assertContains(response, 'name="categoria_segundo"')
+        self.assertContains(response, 'name="precio"')
+        self.assertContains(response, 'name="activo"')
+
+    def test_configuracion_not_addable_but_editable(self):
+        cfg = Configuracion.get()
+        self.assertEqual(cfg.recargo_por_taper, Decimal("1.00"))
+        # singleton: adding a second config row is forbidden
+        add_response = self.client.get(reverse('admin:restaurante_configuracion_add'))
+        self.assertEqual(add_response.status_code, 403)
+        # editing the existing singleton row persists
+        change_url = reverse('admin:restaurante_configuracion_change', args=[cfg.id])
+        change_response = self.client.post(change_url, {'recargo_por_taper': '2.50'})
+        self.assertEqual(change_response.status_code, 302)
+        cfg.refresh_from_db()
+        self.assertEqual(cfg.recargo_por_taper, Decimal("2.50"))
