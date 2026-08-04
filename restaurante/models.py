@@ -117,10 +117,9 @@ class Orden(models.Model):
 
     def computar_total(self):
         total = sum(d.subtotal() for d in self.detalles.all())
-        if self.tipo_servicio == 'LLEVAR':
-            tapers = sum(d.taper_count() for d in self.detalles.all())
-            if tapers > 0:
-                total += tapers * Configuracion.get().recargo_por_taper
+        tapers = sum(d.taper_count() for d in self.detalles.all())
+        if tapers > 0:
+            total += tapers * Configuracion.get().recargo_por_taper
         return total
 
 

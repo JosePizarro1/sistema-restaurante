@@ -66,13 +66,13 @@ def pos_view(request):
             # set, satisfying the DetalleOrden CheckConstraint.
             cantidad = int(item['cantidad'])
             nota = item.get('nota', '').strip()
-            es_para_llevar = bool(item.get('es_para_llevar', False))
+            es_para_llevar = bool(item.get('es_para_llevar', False)) or (tipo_servicio == 'LLEVAR')
             if item.get('tipo') == 'menu':
                 menu = get_object_or_404(Menu, id=item['id'], activo=True)
                 entrada_llevar = bool(item.get('entrada_para_llevar', False))
                 segundo_llevar = bool(item.get('segundo_para_llevar', False))
-                # If legacy payload set es_para_llevar=True without component flags, default both to True
-                if es_para_llevar and not entrada_llevar and not segundo_llevar:
+                # If order level is LLEVAR or item es_para_llevar is True and component flags are unset, default both to True
+                if (tipo_servicio == 'LLEVAR' or es_para_llevar) and not entrada_llevar and not segundo_llevar:
                     entrada_llevar = True
                     segundo_llevar = True
                 lineas.append({
