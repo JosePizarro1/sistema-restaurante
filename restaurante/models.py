@@ -186,7 +186,6 @@ class DetalleOrden(models.Model):
         ):
             return self.cantidad
         return 0
-        return 0
 
     def clean(self):
         # Exactly one of plato/menu must be set: no orphan lines (neither) and
