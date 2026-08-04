@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from PIL import Image
 
-from .models import Categoria, DetalleOrden, Menu, Orden, Plato
+from .models import Categoria, Configuracion, DetalleOrden, Menu, Orden, Plato
 from .pusher_utils import trigger_pusher_event
 
 
@@ -120,6 +120,7 @@ def pos_view(request):
     menus = Menu.objects.filter(activo=True).select_related('categoria_entrada', 'categoria_segundo')
     entradas = Plato.objects.filter(activo=True, categoria__nombre='Entrada')
     segundos = Plato.objects.filter(activo=True, categoria__nombre='Segundo')
+    configuracion = Configuracion.get()
     return render(request, 'pos.html', {
         'platos': platos,
         'menus': menus,
@@ -127,6 +128,8 @@ def pos_view(request):
         'segundos': segundos,
         'ordenes_listas': ordenes_listas,
         'categorias': categorias,
+        'configuracion': configuracion,
+        'recargo_taper': configuracion.recargo_por_taper,
     })
 
 @login_required
