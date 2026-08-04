@@ -248,15 +248,32 @@ def reportes_view(request):
         estado='PAGADO'
     )
 
-    total_ventas = ordenes_periodo.aggregate(Sum('total'))['total__sum'] or 0
-    ventas_efectivo = ordenes_periodo.filter(metodo_pago='EFECTIVO').aggregate(Sum('total'))['total__sum'] or 0
-    ventas_yape = ordenes_periodo.filter(metodo_pago='YAPE').aggregate(Sum('total'))['total__sum'] or 0
-    ventas_transferencia = ordenes_periodo.filter(metodo_pago='TRANSFERENCIA').aggregate(Sum('total'))['total__sum'] or 0
+    recargo_taper_unitario = Configuracion.get().recargo_por_taper
+    detalles_periodo = DetalleOrden.objects.filter(orden__in=ordenes_periodo).select_related('plato__categoria', 'menu', 'orden')
 
-    # Platos más vendidos en el periodo
-    platos_mas_vendidos = DetalleOrden.objects.filter(
-        orden__in=ordenes_periodo
-    ).values('plato__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:5]
+    total_ventas = ordenes_periodo.aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+    ventas_efectivo = ordenes_periodo.filter(metodo_pago='EFECTIVO').aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+    ventas_yape = ordenes_periodo.filter(metodo_pago='YAPE').aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+    ventas_transferencia = ordenes_periodo.filter(metodo_pago='TRANSFERENCIA').aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+
+    # Métricas de Táper y Envasado
+    total_tapers = sum(d.taper_count() for d in detalles_periodo)
+    monto_tapers = Decimal(str(total_tapers)) * recargo_taper_unitario
+    subtotal_consumo = total_ventas - monto_tapers
+
+    # Servicio MESA vs LLEVAR
+    ventas_mesa = ordenes_periodo.filter(tipo_servicio='MESA').aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+    ventas_llevar = ordenes_periodo.filter(tipo_servicio='LLEVAR').aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+    conteo_mesa = ordenes_periodo.filter(tipo_servicio='MESA').count()
+    conteo_llevar = ordenes_periodo.filter(tipo_servicio='LLEVAR').count()
+    total_ordenes_count = ordenes_periodo.count()
+    ticket_promedio = (total_ventas / Decimal(str(total_ordenes_count))) if total_ordenes_count > 0 else Decimal('0.00')
+
+    # Platos a la carta más vendidos
+    platos_mas_vendidos = detalles_periodo.filter(plato__isnull=False).values('plato__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:5]
+
+    # Menús Combo más vendidos
+    menus_mas_vendidos = detalles_periodo.filter(menu__isnull=False).values('menu__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:5]
 
     # Agrupación diaria para el gráfico de líneas
     ventas_diarias_qs = ordenes_periodo.annotate(dia=TruncDate('fecha_creacion')) \
@@ -284,10 +301,21 @@ def reportes_view(request):
 
     context = {
         'total_ventas': total_ventas,
+        'subtotal_consumo': subtotal_consumo,
+        'total_tapers': total_tapers,
+        'monto_tapers': monto_tapers,
+        'recargo_taper_unitario': recargo_taper_unitario,
         'ventas_efectivo': ventas_efectivo,
         'ventas_yape': ventas_yape,
         'ventas_transferencia': ventas_transferencia,
+        'ventas_mesa': ventas_mesa,
+        'ventas_llevar': ventas_llevar,
+        'conteo_mesa': conteo_mesa,
+        'conteo_llevar': conteo_llevar,
+        'total_ordenes_count': total_ordenes_count,
+        'ticket_promedio': ticket_promedio,
         'platos_mas_vendidos': platos_mas_vendidos,
+        'menus_mas_vendidos': menus_mas_vendidos,
         'labels_dias_json': json.dumps(labels_dias),
         'data_ventas_json': json.dumps(data_ventas),
         'mes_sel': mes_sel,

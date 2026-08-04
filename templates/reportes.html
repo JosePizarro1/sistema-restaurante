@@ -59,27 +59,66 @@
         </form>
     </div>
 
-    <!-- TARJETAS DE TOTALES DEL PERIODO -->
+    <!-- TARJETAS PRINCIPALES DEL PERIODO -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Vendido</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Facturado</span>
             <h3 class="text-2xl sm:text-3xl font-['Outfit'] font-bold text-primary-custom mt-2 mb-0">S/ {{ total_ventas|floatformat:2 }}</h3>
-            <span class="text-[10px] text-gray-400 mt-1">Periodo seleccionado</span>
+            <span class="text-[11px] font-bold text-gray-500 mt-1">Consumo: S/ {{ subtotal_consumo|floatformat:2 }}</span>
         </div>
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">💵 Efectivo</span>
-            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_efectivo|floatformat:2 }}</h3>
-            <span class="text-[10px] text-gray-400 mt-1">Cobrado en caja</span>
+        
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-amber-200/80 bg-amber-50/30 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-800">📦 Recargo Tápers</span>
+                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md">S/ {{ recargo_taper_unitario|floatformat:2 }} c/u</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-['Outfit'] font-bold text-amber-900 mt-2 mb-0">+S/ {{ monto_tapers|floatformat:2 }}</h3>
+            <span class="text-[11px] font-bold text-amber-800 mt-1">🥡 {{ total_tapers }} envases cobrados</span>
         </div>
+
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📱 Yape / Plin</span>
-            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_yape|floatformat:2 }}</h3>
-            <span class="text-[10px] text-gray-400 mt-1">Pagos digitales</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🍽️ Servicio Mesa / Llevar</span>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-lg font-bold text-blue-700">Mesa: S/ {{ ventas_mesa|floatformat:2 }}</span>
+            </div>
+            <span class="text-[11px] font-bold text-gray-500 mt-1">🥡 Llevar: S/ {{ ventas_llevar|floatformat:2 }} ({{ conteo_llevar }} órdenes)</span>
         </div>
+
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🏦 Transferencia</span>
-            <h3 class="text-xl sm:text-2xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ventas_transferencia|floatformat:2 }}</h3>
-            <span class="text-[10px] text-gray-400 mt-1">Bancos</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📊 Ticket Promedio</span>
+            <h3 class="text-2xl sm:text-3xl font-['Outfit'] font-bold text-[#15202B] mt-2 mb-0">S/ {{ ticket_promedio|floatformat:2 }}</h3>
+            <span class="text-[11px] text-gray-400 mt-1">En {{ total_ordenes_count }} órdenes cerradas</span>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTODOS DE PAGO -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">💵 Efectivo</span>
+                <h4 class="text-xl font-['Outfit'] font-bold text-emerald-600 mt-1">S/ {{ ventas_efectivo|floatformat:2 }}</h4>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <i class="ti ti-cash text-xl"></i>
+            </div>
+        </div>
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">📱 Yape / Plin</span>
+                <h4 class="text-xl font-['Outfit'] font-bold text-amber-600 mt-1">S/ {{ ventas_yape|floatformat:2 }}</h4>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                <i class="ti ti-device-mobile text-xl"></i>
+            </div>
+        </div>
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🏦 Transferencia</span>
+                <h4 class="text-xl font-['Outfit'] font-bold text-indigo-600 mt-1">S/ {{ ventas_transferencia|floatformat:2 }}</h4>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <i class="ti ti-building-bank text-xl"></i>
+            </div>
         </div>
     </div>
 
@@ -101,8 +140,8 @@
         </div>
     </div>
 
-    <!-- SECCIÓN SECUNDARIA: DISTRIBUCIÓN PAGO Y TOP PLATOS -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+    <!-- SECCIÓN SECUNDARIA: DISTRIBUCIÓN PAGO Y TOP PLATOS / MENÚS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         <!-- Gráfico de Dona: Métodos de Pago -->
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
             <h4 class="text-base font-['Outfit'] font-bold text-[#15202B] mb-4">Distribución por Método de Pago</h4>
@@ -111,24 +150,47 @@
             </div>
         </div>
 
-        <!-- Top Platos del Periodo -->
+        <!-- Top Platos a la Carta -->
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <h4 class="text-base font-['Outfit'] font-bold text-[#15202B] mb-4">Top Platos Vendidos en el Periodo</h4>
+            <h4 class="text-base font-['Outfit'] font-bold text-[#15202B] mb-4">Top Platos a la Carta</h4>
             <div class="divide-y divide-gray-50">
                 {% for plato in platos_mas_vendidos %}
                 <div class="py-3 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center">#{{ forloop.counter }}</span>
-                        <span class="text-sm font-bold text-[#15202B]">{{ plato.plato__nombre }}</span>
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-7 h-7 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs flex items-center justify-center shrink-0">#{{ forloop.counter }}</span>
+                        <span class="text-sm font-bold text-[#15202B] truncate">{{ plato.plato__nombre }}</span>
                     </div>
-                    <span class="px-3 py-1 bg-primary-light text-primary-custom rounded-lg text-xs font-bold">
-                        {{ plato.total_cantidad }} unidades
+                    <span class="px-3 py-1 bg-primary-light text-primary-custom rounded-lg text-xs font-bold shrink-0">
+                        {{ plato.total_cantidad }} und
                     </span>
                 </div>
                 {% empty %}
                 <div class="py-12 text-center text-gray-400 text-xs">
                     <i class="ti ti-receipt-off text-3xl block mb-2 text-gray-300"></i>
-                    Sin ventas registradas en este periodo.
+                    Sin ventas de platos.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top Menús Combo -->
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-amber-200/80 bg-amber-50/20 shadow-sm">
+            <h4 class="text-base font-['Outfit'] font-bold text-amber-900 mb-4">Top Menús Combo Vendidos</h4>
+            <div class="divide-y divide-amber-100/60">
+                {% for m in menus_mas_vendidos %}
+                <div class="py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">#{{ forloop.counter }}</span>
+                        <span class="text-sm font-bold text-amber-950 truncate">{{ m.menu__nombre }}</span>
+                    </div>
+                    <span class="px-3 py-1 bg-amber-500 text-white rounded-lg text-xs font-extrabold shrink-0">
+                        {{ m.total_cantidad }} combos
+                    </span>
+                </div>
+                {% empty %}
+                <div class="py-12 text-center text-amber-700/60 text-xs">
+                    <i class="ti ti-tag text-3xl block mb-2 text-amber-400"></i>
+                    Sin ventas de Menú Combo.
                 </div>
                 {% endfor %}
             </div>
