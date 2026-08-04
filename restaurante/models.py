@@ -115,9 +115,24 @@ class Orden(models.Model):
     def __str__(self):
         return f"Orden #{self.id} - {self.estado} ({self.get_metodo_pago_display()})"
 
+    @property
+    def total_tapers(self):
+        return sum(d.taper_count() for d in self.detalles.all())
+
+    @property
+    def subtotal_consumo(self):
+        return sum(d.subtotal() for d in self.detalles.all())
+
+    @property
+    def monto_tapers(self):
+        tapers = self.total_tapers
+        if tapers > 0:
+            return tapers * Configuracion.get().recargo_por_taper
+        return Decimal("0.00")
+
     def computar_total(self):
-        total = sum(d.subtotal() for d in self.detalles.all())
-        tapers = sum(d.taper_count() for d in self.detalles.all())
+        total = self.subtotal_consumo
+        tapers = self.total_tapers
         if tapers > 0:
             total += tapers * Configuracion.get().recargo_por_taper
         return total

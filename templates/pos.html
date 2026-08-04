@@ -256,42 +256,79 @@
             {% for orden in ordenes_listas %}
             <div class="bg-white rounded-[24px] border-2 border-green-200 p-6 shadow-sm flex flex-col justify-between">
                 <div>
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+                    <div class="flex justify-between items-start mb-4 pb-3 border-b border-gray-100">
                         <div>
-                            <span class="text-xs font-bold uppercase text-green-600">¡Listo para Servir!</span>
-                            <h3 class="text-2xl font-['Outfit'] font-bold">Orden #{{ orden.id }}</h3>
-                        </div>
-                        <span class="text-xs font-bold text-gray-400">{{ orden.fecha_creacion|date:"H:i" }} hrs</span>
-                    </div>
-
-                    <div class="space-y-2 mb-4">
-                        {% for detalle in orden.detalles.all %}
-                        <div class="flex items-center justify-between text-sm gap-2">
-                            <div class="flex items-center gap-2 min-w-0">
-                                {% if detalle.plato_id %}
-                                    {% if detalle.plato.imagen_base64 %}
-                                    <img src="{{ detalle.plato.imagen_base64 }}" class="w-8 h-8 rounded-lg object-cover border border-gray-200 shrink-0" alt="{{ detalle.plato.nombre }}">
-                                    {% else %}
-                                    <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-gray-400 text-xs border border-gray-200/60">
-                                        <i class="ti ti-salad"></i>
-                                    </div>
-                                    {% endif %}
-                                    <span class="font-bold text-gray-700 truncate">{{ detalle.plato.nombre }} x{{ detalle.cantidad }}</span>
-                                {% elif detalle.menu_id %}
-                                    <div class="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center shrink-0 text-primary-custom text-xs border border-primary-custom/20">
-                                        <i class="ti ti-tag"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-700 truncate">Menú · {{ detalle.menu.nombre }} x{{ detalle.cantidad }}</span>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wide text-green-600 bg-green-50 px-2 py-0.5 rounded-md">¡Listo para Servir!</span>
+                                {% if orden.tipo_servicio == 'LLEVAR' or orden.total_tapers > 0 %}
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md border border-amber-200">🥡 PARA LLEVAR</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md border border-blue-200">🍽️ EN MESA</span>
                                 {% endif %}
                             </div>
-                            <span class="text-gray-500 shrink-0">S/ {{ detalle.subtotal|floatformat:2 }}</span>
+                            <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B]">Orden #{{ orden.id }}</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <!-- BOTÓN OJITO PARA VER PRE-BOLETA / TICKET -->
+                            <button type="button" 
+                                    onclick="abrirModalBoleta('modal-boleta-{{ orden.id }}')" 
+                                    class="w-9 h-9 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-amber-200 shadow-xs" 
+                                    title="Ver Pre-Boleta / Ticket de Impresión">
+                                <i class="ti ti-eye text-lg"></i>
+                            </button>
+                            <span class="text-xs font-bold text-gray-400">{{ orden.fecha_creacion|date:"H:i" }} hrs</span>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Ítems en la Tarjeta -->
+                    <div class="space-y-2.5 mb-4">
+                        {% for detalle in orden.detalles.all %}
+                        <div class="p-2.5 bg-gray-50 border border-gray-100 rounded-xl space-y-1">
+                            <div class="flex items-center justify-between text-sm gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    {% if detalle.plato_id %}
+                                        {% if detalle.plato.imagen_base64 %}
+                                        <img src="{{ detalle.plato.imagen_base64 }}" class="w-7 h-7 rounded-lg object-cover border border-gray-200 shrink-0" alt="{{ detalle.plato.nombre }}">
+                                        {% else %}
+                                        <div class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-gray-400 text-xs border border-gray-200/60">
+                                            <i class="ti ti-salad"></i>
+                                        </div>
+                                        {% endif %}
+                                        <span class="font-bold text-gray-800 truncate">{{ detalle.plato.nombre }} x{{ detalle.cantidad }}</span>
+                                    {% elif detalle.menu_id %}
+                                        <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-xs font-bold border border-amber-200">
+                                            <i class="ti ti-category"></i>
+                                        </div>
+                                        <span class="font-bold text-gray-800 truncate">{{ detalle.menu.nombre }} x{{ detalle.cantidad }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="font-bold text-gray-700 shrink-0">S/ {{ detalle.subtotal|floatformat:2 }}</span>
+                            </div>
+                            {% if detalle.nota %}
+                            <p class="text-xs text-amber-800 font-medium pl-9">📝 {{ detalle.nota }}</p>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
 
-                    <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-xl mb-4 font-bold text-lg">
-                        <span>Total a Cobrar:</span>
-                        <span class="text-green-600 font-['Outfit'] text-2xl">S/ {{ orden.total }}</span>
+                    <!-- Desglose Visivo de Consumo vs Recargo Tápers -->
+                    <div class="p-3 bg-amber-50/70 border border-amber-200/70 rounded-2xl space-y-1.5 mb-4 text-xs font-bold">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Subtotal Platos / Menús:</span>
+                            <span>S/ {{ orden.subtotal_consumo|floatformat:2 }}</span>
+                        </div>
+                        {% if orden.total_tapers > 0 %}
+                        <div class="flex justify-between text-amber-900 bg-amber-100/80 p-1.5 rounded-lg border border-amber-200">
+                            <span class="flex items-center gap-1">
+                                <i class="ti ti-box"></i> Recargo Tápers ({{ orden.total_tapers }} envases x S/ {{ recargo_taper|default:"1.00" }}):
+                            </span>
+                            <span class="font-extrabold text-amber-950">+S/ {{ orden.monto_tapers|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex justify-between items-center pt-2 border-t border-amber-200 text-base">
+                            <span class="text-gray-900 font-extrabold">Total a Cobrar:</span>
+                            <span class="text-green-600 font-['Outfit'] font-extrabold text-2xl">S/ {{ orden.total }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -312,6 +349,71 @@
                         <span>Cobrar y Cerrar Pedido</span>
                     </button>
                 </form>
+            </div>
+
+            <!-- MODAL DE PRE-BOLETA / TICKET DE IMPRESIÓN PARA CADA ORDEN -->
+            <div id="modal-boleta-{{ orden.id }}" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+                    <!-- Ticket Content Printable -->
+                    <div id="printable-ticket-{{ orden.id }}" class="font-mono text-xs text-gray-800 space-y-3 bg-white p-3 border border-dashed border-gray-300 rounded-xl">
+                        <div class="text-center border-b border-dashed border-gray-300 pb-2">
+                            <h2 class="text-base font-bold font-['Outfit'] uppercase text-black">SISTEMA RESTAURANTE</h2>
+                            <p class="text-[10px] text-gray-500">Ticket de Venta / Pre-Boleta</p>
+                            <p class="text-[10px] text-gray-500">Fecha: {{ orden.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                            <p class="text-xs font-bold text-black mt-1">ORDEN #{{ orden.id }} — {{ orden.get_tipo_servicio_display|upper }}</p>
+                            {% if orden.nota_general %}
+                            <p class="text-[10px] italic text-gray-600">Mesa / Nota: {{ orden.nota_general }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="space-y-2 border-b border-dashed border-gray-300 pb-2">
+                            {% for detalle in orden.detalles.all %}
+                            <div class="space-y-0.5">
+                                <div class="flex justify-between font-bold text-black">
+                                    <span>{% if detalle.menu_id %}Menú Combo{% else %}{{ detalle.plato.nombre }}{% endif %} x{{ detalle.cantidad }}</span>
+                                    <span>S/ {{ detalle.subtotal|floatformat:2 }}</span>
+                                </div>
+                                {% if detalle.nota %}
+                                <div class="text-[10px] text-gray-600 pl-2">↳ {{ detalle.nota }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Resumen del Ticket -->
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between text-gray-600">
+                                <span>Subtotal Platos/Menús:</span>
+                                <span>S/ {{ orden.subtotal_consumo|floatformat:2 }}</span>
+                            </div>
+                            {% if orden.total_tapers > 0 %}
+                            <div class="flex justify-between font-bold text-amber-900">
+                                <span>Recargo Tápers ({{ orden.total_tapers }} x S/ {{ recargo_taper|default:"1.00" }}):</span>
+                                <span>+S/ {{ orden.monto_tapers|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="flex justify-between font-extrabold text-sm text-black border-t border-gray-400 pt-1 mt-1">
+                                <span>TOTAL A PAGAR:</span>
+                                <span>S/ {{ orden.total }}</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-[10px] text-gray-400 border-t border-dashed border-gray-300 pt-2">
+                            *** ¡Gracias por su preferencia! ***
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción Modal -->
+                    <div class="flex items-center justify-between gap-3 pt-2">
+                        <button type="button" onclick="cerrarModalBoleta('modal-boleta-{{ orden.id }}')" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl cursor-pointer">
+                            Cerrar
+                        </button>
+                        <button type="button" onclick="imprimirTicket('printable-ticket-{{ orden.id }}')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer">
+                            <i class="ti ti-printer text-base"></i>
+                            <span>Imprimir Ticket</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             {% empty %}
             <div class="col-span-3 text-center py-16 bg-white rounded-[24px] border border-gray-100">
@@ -815,6 +917,33 @@
             fab.classList.add('scale-110');
             setTimeout(() => fab.classList.remove('scale-110'), 150);
         }
+    }
+
+    // ---- Boleta / Ticket Modal JS ----
+    function abrirModalBoleta(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function cerrarModalBoleta(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function imprimirTicket(ticketElementId) {
+        const ticketContent = document.getElementById(ticketElementId).outerHTML;
+        const win = window.open('', '', 'height=600,width=450');
+        win.document.write('<html><head><title>Imprimir Ticket</title>');
+        win.document.write('<script src="https://cdn.tailwindcss.com"></script>');
+        win.document.write('</head><body class="p-4 flex justify-center bg-white">');
+        win.document.write(ticketContent);
+        win.document.write('</body></html>');
+        win.document.close();
+        win.focus();
+        setTimeout(() => {
+            win.print();
+            win.close();
+        }, 500);
     }
 </script>
 
