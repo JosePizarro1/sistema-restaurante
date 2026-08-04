@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -439,3 +440,221 @@ class CategoriaPackableDefaultTest(TestCase):
         )
         # 11.00 + (1 taper × 1.00) = 12.00
         self.assertEqual(orden.computar_total(), Decimal("12.00"))
+
+
+class PoblarDatosSeedTest(TestCase):
+    """Task 2.1 — seed yields the exact real catalog and is deterministic.
+
+    Integration tests against the `poblar_datos` management command (catalog
+    scenarios: "Seed creates the exact catalog", "Seed is deterministic")."""
+
+    def _run(self, reset=False):
+        call_command('poblar_datos', reset=reset)
+
+    def _catalog_state(self):
+        """Normalized, sortable snapshot of the seeded catalog."""
+        return {
+            'categorias': sorted(Categoria.objects.values_list('nombre', 'packable', 'activo', 'orden')),
+            'platos': sorted(Plato.objects.values_list('categoria__nombre', 'nombre', 'precio', 'activo')),
+            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre',
+                                                     'categoria_segundo__nombre', 'activo')),
+            'config': Decimal(Configuracion.get().recargo_por_taper),
+        }
+
+    def test_seed_creates_exact_catalog(self):
+        self._run()
+        # 3 categorías
+        self.assertEqual(Categoria.objects.count(), 3)
+        # 1 Entrada + 10 Segundos + 3 Añadidos = 14 platos
+        self.assertEqual(Plato.objects.count(), 14)
+
+        entrada = Categoria.objects.get(nombre="Entrada")
+        segundo = Categoria.objects.get(nombre="Segundo")
+        anadidos = Categoria.objects.get(nombre="Añadidos")
+
+        # Entrada: Sopa de Res 6.00, packable=True
+        sopa = Plato.objects.get(nombre="Sopa de Res", categoria=entrada)
+        self.assertEqual(sopa.precio, Decimal("6.00"))
+        self.assertTrue(entrada.packable)
+
+        # Segundos: the 10 names, all 11.00, packable=True
+        segundos = list(Plato.objects.filter(categoria=segundo))
+        self.assertEqual(len(segundos), 10)
+        self.assertTrue(all(p.precio == Decimal("11.00") for p in segundos))
+        self.assertTrue(segundo.packable)
+        self.assertEqual(
+            {p.nombre for p in segundos},
+            {"Lomo Saltado", "Pollo Dorado", "Hamburguesa al Plato", "Chuleta de Res",
+             "Saltado de Mollejas", "Hígado Frito", "Pollo Broaster", "Riñón Saltado",
+             "Chuleta de Chancho", "Arroz a la Cubana"},
+        )
+
+        # Añadidos: Huevo 1.50, Porción de Arroz 3.00, Porción de Papa 3.00, packable=False
+        self.assertFalse(anadidos.packable)
+        self.assertEqual(Plato.objects.get(nombre="Huevo", categoria=anadidos).precio, Decimal("1.50"))
+        self.assertEqual(
+            Plato.objects.get(nombre="Porción de Arroz", categoria=anadidos).precio, Decimal("3.00")
+        )
+        self.assertEqual(
+            Plato.objects.get(nombre="Porción de Papa", categoria=anadidos).precio, Decimal("3.00")
+        )
+
+    def test_seed_creates_menu_with_price_and_category_refs(self):
+        self._run()
+        menu = Menu.objects.get(nombre="Menú")
+        self.assertEqual(menu.precio, Decimal("13.00"))
+        self.assertTrue(menu.activo)
+        self.assertEqual(menu.categoria_entrada, Categoria.objects.get(nombre="Entrada"))
+        self.assertEqual(menu.categoria_segundo, Categoria.objects.get(nombre="Segundo"))
+
+    def test_seed_is_deterministic_and_idempotent(self):
+        # Run twice from empty DB: identical state, no duplicate rows.
+        self._run()
+        first = self._catalog_state()
+        platos_after_first = Plato.objects.count()
+        categorias_after_first = Categoria.objects.count()
+        self._run()
+        self.assertEqual(Plato.objects.count(), platos_after_first)
+        self.assertEqual(Categoria.objects.count(), categorias_after_first)
+        self.assertEqual(self._catalog_state(), first)
+
+    def test_seed_assigns_placeholder_image_to_every_new_plato(self):
+        # Regression: the seed rewrite dropped demo-image generation, leaving
+        # every seeded plato without an image (blank POS/menu cards). Every
+        # newly seeded plato MUST end up with a non-empty imagen_base64.
+        self._run()
+        platos = list(Plato.objects.all())
+        self.assertEqual(len(platos), 14)
+        for plato in platos:
+            self.assertTrue(plato.imagen_base64)
+            self.assertTrue(plato.imagen_base64.startswith("data:image/"))
+
+    def test_seed_does_not_overwrite_existing_plato_image(self):
+        # Images are filled only when empty; an admin-assigned image must be kept.
+        self._run()
+        plato = Plato.objects.get(nombre="Lomo Saltado")
+        plato.imagen_base64 = "data:image/jpeg;base64,KEEP"
+        plato.save()
+        self._run()
+        plato.refresh_from_db()
+        self.assertEqual(plato.imagen_base64, "data:image/jpeg;base64,KEEP")
+
+
+class PoblarDatosResetTest(TestCase):
+    """Task 2.2 — --reset clears-then-reseeds, soft-deactivates stale rows,
+    never hits ProtectedError, and is idempotent."""
+
+    def _run(self, reset=False):
+        call_command('poblar_datos', reset=reset)
+
+    def _catalog_state(self):
+        return {
+            'categorias': sorted(Categoria.objects.values_list('nombre', 'packable', 'activo', 'orden')),
+            'platos': sorted(Plato.objects.values_list('categoria__nombre', 'nombre', 'precio', 'activo')),
+            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre',
+                                                     'categoria_segundo__nombre', 'activo')),
+            'config': Decimal(Configuracion.get().recargo_por_taper),
+        }
+
+    def test_reset_clears_then_reseeds_and_deactivates_stale(self):
+        # Pre-existing stale catalog referencing a PROTECTed order row.
+        stale_cat = Categoria.objects.create(nombre="Bebidas", orden=1, activo=True)
+        stale_plato = Plato.objects.create(nombre="Inca Kola 1.5L", precio=9.00, categoria=stale_cat)
+        orden = Orden.objects.create(tipo_servicio='MESA')
+        # PROTECT on DetalleOrden.plato → seed must NOT hard-delete stale_plato.
+        DetalleOrden.objects.create(
+            orden=orden, plato=stale_plato, cantidad=1, precio_unitario=Decimal("9.00")
+        )
+
+        # Must not raise ProtectedError.
+        self._run(reset=True)
+
+        # Stale rows deactivated (not deleted), order intact.
+        stale_cat.refresh_from_db()
+        stale_plato.refresh_from_db()
+        self.assertFalse(stale_cat.activo)
+        self.assertFalse(stale_plato.activo)
+        self.assertTrue(DetalleOrden.objects.filter(plato=stale_plato).exists())
+
+        # Target catalog seeded; exactly the 3 seed categorías are active.
+        self.assertEqual(Categoria.objects.filter(activo=True).count(), 3)
+        self.assertFalse(Categoria.objects.get(nombre="Bebidas").activo)
+        self.assertTrue(Categoria.objects.get(nombre="Entrada").activo)
+        self.assertTrue(Plato.objects.get(nombre="Lomo Saltado").activo)
+
+    def test_reset_reconciles_packable_flags(self):
+        # Older rows may carry wrong packable (legacy default True); reset fixes them.
+        Categoria.objects.create(nombre="Entrada", orden=1, packable=False, activo=True)
+        Categoria.objects.create(nombre="Segundo", orden=2, packable=False, activo=True)
+        Categoria.objects.create(nombre="Añadidos", orden=3, packable=True, activo=True)
+        self._run(reset=True)
+        self.assertTrue(Categoria.objects.get(nombre="Entrada").packable)
+        self.assertTrue(Categoria.objects.get(nombre="Segundo").packable)
+        self.assertFalse(Categoria.objects.get(nombre="Añadidos").packable)
+
+    def test_reset_is_idempotent_no_duplicates(self):
+        self._run(reset=True)
+        cat_count = Categoria.objects.count()
+        plato_count = Plato.objects.count()
+        expected_state = self._catalog_state()
+        self._run(reset=True)
+        self.assertEqual(Categoria.objects.count(), cat_count)
+        self.assertEqual(Plato.objects.count(), plato_count)
+        self.assertEqual(self._catalog_state(), expected_state)
+
+    def test_reset_reuses_legacy_row_with_matching_name_and_none_category(self):
+        # Legacy row created by the OLD seed: same seed name but categoria=None.
+        # It must be REUSED (re-parented to Segundo), NOT duplicated. D5 requires
+        # re-parenting demo rows with real names instead of creating a second row.
+        Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
+        Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
+        Categoria.objects.create(nombre="Añadidos", orden=3, packable=False)
+        Plato.objects.create(nombre="Lomo Saltado", precio=8.00, categoria=None)
+
+        self._run(reset=True)
+
+        platos = Plato.objects.filter(nombre="Lomo Saltado")
+        self.assertEqual(platos.count(), 1)
+        plato = platos.first()
+        self.assertEqual(plato.categoria, Categoria.objects.get(nombre="Segundo"))
+        self.assertEqual(plato.precio, Decimal("11.00"))
+        self.assertTrue(plato.activo)
+
+    def test_plain_seed_does_not_clobber_admin_edited_pricing(self):
+        # A NON-`--reset` run must reconcile structure but NOT overwrite
+        # admin-edited Menu.precio, Configuracion.recargo_por_taper, or
+        # existing Plato.precio (catalogo.md: all admin-editable).
+        self._run()
+        menu = Menu.objects.get(nombre="Menú")
+        menu.precio = Decimal("15.00")
+        menu.save()
+        cfg = Configuracion.get()
+        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.save()
+        plato = Plato.objects.get(nombre="Lomo Saltado")
+        plato.precio = Decimal("9.50")
+        plato.save()
+
+        self._run()
+
+        self.assertEqual(Menu.objects.get(nombre="Menú").precio, Decimal("15.00"))
+        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("2.00"))
+        self.assertEqual(
+            Plato.objects.get(nombre="Lomo Saltado").precio, Decimal("9.50")
+        )
+
+    def test_reset_restores_canonical_pricing(self):
+        # --reset force-overwrites the canonical price/surcharge values
+        # (Menu 13.00, recargo 1.00) regardless of admin edits.
+        self._run(reset=True)
+        menu = Menu.objects.get(nombre="Menú")
+        menu.precio = Decimal("15.00")
+        menu.save()
+        cfg = Configuracion.get()
+        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.save()
+
+        self._run(reset=True)
+
+        self.assertEqual(Menu.objects.get(nombre="Menú").precio, Decimal("13.00"))
+        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("1.00"))

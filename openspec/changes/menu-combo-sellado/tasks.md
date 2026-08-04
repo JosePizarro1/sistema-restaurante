@@ -41,9 +41,9 @@ Chain strategy: pending
 
 ## Phase 2: Seed & Reset
 
-- [ ] 2.1 RED tests: seed yields exact catalog (1 Entrada 6.00, 10 Segundos 11.00, 3 Añadidos) + determinism (run twice).
-- [ ] 2.2 RED tests: `--reset` clears-then-reseeds + idempotent (twice, no duplicate rows, no `ProtectedError`).
-- [ ] 2.3 GREEN rewrite `poblar_datos.py`: deterministic seed (Categoria, Plato, Menu, Configuracion), `--reset` soft-deactivates+upserts (never `.delete()`), keep superuser creation.
+- [x] 2.1 RED tests: seed yields exact catalog (1 Entrada 6.00, 10 Segundos 11.00, 3 Añadidos) + determinism (run twice).
+- [x] 2.2 RED tests: `--reset` clears-then-reseeds + idempotent (twice, no duplicate rows, no `ProtectedError`).
+- [x] 2.3 GREEN rewrite `poblar_datos.py`: deterministic seed (Categoria, Plato, Menu, Configuracion), `--reset` soft-deactivates+upserts (never `.delete()`), keep superuser creation.
 
 ## Phase 3: Wire & Admin
 
