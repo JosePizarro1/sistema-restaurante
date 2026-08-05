@@ -73,6 +73,59 @@ class ViewsAccessTest(TestCase):
         self.assertIn('ordenes', response.json())
 
 
+class ModoImpresionTest(TestCase):
+    """Modo impresión: la pantalla de cocina no lista órdenes y el POS
+    oculta el tab 'Por Cobrar' (las comandas se entregan en papel)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mozo', password='password123')
+        self.orden = Orden.objects.create(
+            metodo_pago='PENDIENTE', estado='PENDIENTE', tipo_servicio='MESA', total=25.00
+        )
+
+    def tearDown(self):
+        # Restaurar el modo por defecto para no contaminar otros tests.
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'KITCHEN'
+        cfg.save()
+
+    def test_cocina_lists_orders_in_kitchen_mode(self):
+        self.client.login(username='mozo', password='password123')
+        response = self.client.get(reverse('cocina'))
+        self.assertContains(response, f'data-orden-id="{self.orden.id}"')
+
+    def test_cocina_does_not_list_orders_in_print_mode(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        self.client.login(username='mozo', password='password123')
+        response = self.client.get(reverse('cocina'))
+        self.assertNotContains(response, f'data-orden-id="{self.orden.id}"')
+        self.assertContains(response, 'Modo impresión activo')
+
+    def test_api_cocina_ordenes_empty_in_print_mode(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        self.client.login(username='mozo', password='password123')
+        response = self.client.get(reverse('api_cocina_ordenes'))
+        self.assertEqual(response.json(), {'ordenes': []})
+
+    def test_pos_hides_cobrar_tab_in_print_mode(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        self.client.login(username='mozo', password='password123')
+        response = self.client.get(reverse('pos'))
+        self.assertNotContains(response, 'id="tab-btn-cobrar"')
+
+    def test_pos_shows_cobrar_tab_in_kitchen_mode(self):
+        self.client.login(username='mozo', password='password123')
+        response = self.client.get(reverse('pos'))
+        self.assertContains(response, 'id="tab-btn-cobrar"')
+
+
 class CategoriaCRUDTest(TestCase):
     def setUp(self):
         self.client = Client()

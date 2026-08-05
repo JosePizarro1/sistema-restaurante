@@ -12,6 +12,7 @@
             <i class="ti ti-plus text-lg"></i>
             <span>Nuevo Pedido</span>
         </button>
+        {% if configuracion.modo_envio != 'PRINT' %}
         <button id="tab-btn-cobrar" onclick="switchTab('cobrar')" class="py-3 px-6 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-600 flex items-center gap-2 focus:outline-none cursor-pointer relative">
             <i class="ti ti-cash text-lg"></i>
             <span>Por Cobrar (Listas)</span>
@@ -21,6 +22,7 @@
             </span>
             {% endif %}
         </button>
+        {% endif %}
     </div>
 
     <!-- TAB 1: Tomar Pedido -->
@@ -881,17 +883,25 @@
         if (tab === 'pedido') {
             btnPedido.classList.add('border-primary-custom', 'text-primary-custom');
             btnPedido.classList.remove('border-transparent', 'text-gray-400');
-            btnCobrar.classList.remove('border-primary-custom', 'text-primary-custom');
-            btnCobrar.classList.add('border-transparent', 'text-gray-400');
+            if (btnCobrar) {
+                btnCobrar.classList.remove('border-primary-custom', 'text-primary-custom');
+                btnCobrar.classList.add('border-transparent', 'text-gray-400');
+            }
             contentPedido.classList.remove('hidden');
-            contentCobrar.classList.add('hidden');
+            if (contentCobrar) {
+                contentCobrar.classList.add('hidden');
+            }
             fab.classList.remove('hidden');
         } else {
-            btnCobrar.classList.add('border-primary-custom', 'text-primary-custom');
-            btnCobrar.classList.remove('border-transparent', 'text-gray-400');
+            if (btnCobrar) {
+                btnCobrar.classList.add('border-primary-custom', 'text-primary-custom');
+                btnCobrar.classList.remove('border-transparent', 'text-gray-400');
+            }
             btnPedido.classList.remove('border-primary-custom', 'text-primary-custom');
             btnPedido.classList.add('border-transparent', 'text-gray-400');
-            contentCobrar.classList.remove('hidden');
+            if (contentCobrar) {
+                contentCobrar.classList.remove('hidden');
+            }
             contentPedido.classList.add('hidden');
             fab.classList.add('hidden');
         }

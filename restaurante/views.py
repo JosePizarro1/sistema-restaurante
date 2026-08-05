@@ -257,12 +257,21 @@ def cobrar_orden(request, orden_id):
 
 @login_required
 def cocina_view(request):
-    ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu')
-    return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
+    configuracion = Configuracion.get()
+    if configuracion.modo_envio == 'PRINT':
+        # Modo impresión: las comandas se imprimen en el POS y se entregan en
+        # papel; la pantalla de cocina queda como respaldo pero sin listar
+        # órdenes (nadie la marca LISTO/CANCELADO en este modo).
+        ordenes_pendientes = Orden.objects.none()
+    else:
+        ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu')
+    return render(request, 'cocina.html', {'ordenes': ordenes_pendientes, 'configuracion': configuracion})
 
 
 @login_required
 def api_cocina_ordenes(request):
+    if Configuracion.get().modo_envio == 'PRINT':
+        return JsonResponse({'ordenes': []})
     ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu').order_by('fecha_creacion')
     data = []
     for orden in ordenes_pendientes:
