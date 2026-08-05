@@ -248,7 +248,15 @@
         <aside id="comanda-desktop" class="hidden lg:flex w-[360px] flex-shrink-0 flex-col">
             <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 flex flex-col sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-                    <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                        <button type="button" 
+                                onclick="abrirPreviewTicket()" 
+                                class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-amber-200 shadow-xs" 
+                                title="Previsualizar Ticket / Pre-Comanda a imprimir">
+                            <i class="ti ti-eye text-sm"></i>
+                        </button>
+                    </div>
                     <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
                 </div>
 
@@ -310,7 +318,15 @@
         <div class="flex flex-col px-5 pt-4 shrink-0">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3"></div>
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-                <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
+                    <button type="button" 
+                            onclick="abrirPreviewTicket()" 
+                            class="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center cursor-pointer border border-amber-200 shadow-xs" 
+                            title="Previsualizar Ticket / Pre-Comanda a imprimir">
+                        <i class="ti ti-eye text-sm"></i>
+                    </button>
+                </div>
                 <button onclick="cerrarDrawer()" class="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
                     <i class="ti ti-x text-lg"></i>
                 </button>
@@ -534,6 +550,61 @@
             {% endfor %}
         </div>
     </div>
+
+    <!-- MODAL DE PREVISUALIZACIÓN DEL TICKET EN VIVO (CARRITO ACTUAL) -->
+    <div id="modal-preview-ticket" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 border border-gray-100">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                <h3 class="text-base font-extrabold font-['Outfit'] text-[#15202B]">Vista Previa de Impresión</h3>
+                <button type="button" onclick="cerrarPreviewTicket()" class="w-8 h-8 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200">
+                    <i class="ti ti-x text-base"></i>
+                </button>
+            </div>
+
+            <!-- Previsualización monocroma estilo 80mm -->
+            <div id="printable-preview-ticket" class="font-mono text-xs text-gray-900 space-y-2.5 bg-slate-50 p-4 border border-dashed border-gray-300 rounded-xl max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div class="text-center border-b border-dashed border-gray-300 pb-2">
+                    <h4 class="text-sm font-bold font-['Outfit'] uppercase text-black">SISTEMA RESTAURANTE</h4>
+                    <p class="text-[10px] text-gray-500">Pre-Comanda de Venta</p>
+                    <p class="text-xs font-bold text-black mt-1" id="pv-ticket-servicio">ORDEN — EN MESA</p>
+                    <p class="text-[10px] italic text-gray-600" id="pv-ticket-mesa">Mesa no seleccionada</p>
+                </div>
+
+                <div class="space-y-1.5 border-b border-dashed border-gray-300 pb-2" id="pv-ticket-items">
+                    <!-- Dinámico -->
+                </div>
+
+                <div class="space-y-1 text-xs pt-1">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Subtotal Consumo:</span>
+                        <span id="pv-ticket-subtotal">S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-amber-900 hidden" id="pv-ticket-row-taper">
+                        <span id="pv-ticket-label-taper">Recargo Tápers:</span>
+                        <span id="pv-ticket-monto-taper">+S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between font-extrabold text-sm text-black border-t border-gray-400 pt-1.5 mt-1">
+                        <span>TOTAL A PAGAR:</span>
+                        <span id="pv-ticket-total">S/ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="text-center text-[10px] text-gray-400 border-t border-dashed border-gray-300 pt-2">
+                    *** ¡Gracias por su preferencia! ***
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 pt-1">
+                <button type="button" onclick="cerrarPreviewTicket()" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl cursor-pointer">
+                    Cerrar
+                </button>
+                <button type="button" onclick="imprimirTicket('printable-preview-ticket')" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer border-0">
+                    <i class="ti ti-printer text-base"></i>
+                    <span>Imprimir Demo</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -567,6 +638,82 @@
         win.focus();
         win.print();
         win.close();
+    }
+
+    function abrirPreviewTicket() {
+        const modal = document.getElementById('modal-preview-ticket');
+        if (!modal) return;
+
+        const servicioEl = document.getElementById('pv-ticket-servicio');
+        const mesaEl = document.getElementById('pv-ticket-mesa');
+        const itemsEl = document.getElementById('pv-ticket-items');
+        const subtotalEl = document.getElementById('pv-ticket-subtotal');
+        const rowTaper = document.getElementById('pv-ticket-row-taper');
+        const labelTaper = document.getElementById('pv-ticket-label-taper');
+        const montoTaper = document.getElementById('pv-ticket-monto-taper');
+        const totalEl = document.getElementById('pv-ticket-total');
+
+        const notaGeneral = document.getElementById('input_nota_general').value || '';
+        servicioEl.innerText = `ORDEN — ${tipoServicioActual === 'LLEVAR' ? 'PARA LLEVAR' : 'EN MESA'}`;
+        mesaEl.innerText = notaGeneral ? `Ubicación: ${notaGeneral}` : 'Ubicación no seleccionada';
+
+        let subtotalConsumo = 0;
+        let totalTapersCount = 0;
+        let itemsHTML = '';
+
+        if (carrito.length === 0) {
+            itemsHTML = `<p class="text-center italic text-gray-400 py-2">(El carrito está vacío)</p>`;
+        } else {
+            carrito.forEach(item => {
+                const sub = item.precio * item.cantidad;
+                subtotalConsumo += sub;
+                
+                let badges = [];
+                if (item.tipo === 'menu') {
+                    if (item.entrada_para_llevar) { totalTapersCount += item.cantidad; badges.push('Entrada Llevar'); }
+                    if (item.segundo_para_llevar) { totalTapersCount += item.cantidad; badges.push('Segundo Llevar'); }
+                } else if (item.es_para_llevar && item.packable) {
+                    totalTapersCount += item.cantidad;
+                    badges.push('Llevar');
+                }
+
+                const badgeStr = badges.length ? ` <span class="text-[9px] text-gray-500">[${badges.join(', ')}]</span>` : '';
+                const notaStr = item.nota ? `<br><span class="text-[10px] text-gray-500 pl-3">↳ Nota: ${item.nota}</span>` : '';
+
+                itemsHTML += `
+                    <div class="space-y-0.5">
+                        <div class="flex justify-between font-bold text-black">
+                            <span>${item.nombre} x${item.cantidad}${badgeStr}</span>
+                            <span>S/ ${sub.toFixed(2)}</span>
+                        </div>
+                        ${notaStr}
+                    </div>
+                `;
+            });
+        }
+
+        itemsEl.innerHTML = itemsHTML;
+        subtotalEl.innerText = `S/ ${subtotalConsumo.toFixed(2)}`;
+
+        const recargoPorTaper = 1.00;
+        const montoTaperTotal = totalTapersCount * recargoPorTaper;
+        if (totalTapersCount > 0) {
+            rowTaper.classList.remove('hidden');
+            labelTaper.innerText = `Recargo Tápers (${totalTapersCount} x S/ ${recargoPorTaper.toFixed(2)}):`;
+            montoTaper.innerText = `+S/ ${montoTaperTotal.toFixed(2)}`;
+        } else {
+            rowTaper.classList.add('hidden');
+        }
+
+        const granTotal = subtotalConsumo + montoTaperTotal;
+        totalEl.innerText = `S/ ${granTotal.toFixed(2)}`;
+
+        modal.classList.remove('hidden');
+    }
+
+    function cerrarPreviewTicket() {
+        const modal = document.getElementById('modal-preview-ticket');
+        if (modal) modal.classList.add('hidden');
     }
     let carrito = [];
     let tipoServicioActual = 'MESA';
