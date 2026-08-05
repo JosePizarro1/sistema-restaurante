@@ -200,7 +200,10 @@ def api_cocina_ordenes(request):
                     'plato_nombre': nombre,
                     'cantidad': det.cantidad,
                     'nota': det.nota,
+                    'es_menu': det.menu_id is not None,
                     'es_para_llevar': det.es_para_llevar,
+                    'entrada_para_llevar': det.entrada_para_llevar,
+                    'segundo_para_llevar': det.segundo_para_llevar,
                 }
             )
         fecha_local = timezone.localtime(orden.fecha_creacion)

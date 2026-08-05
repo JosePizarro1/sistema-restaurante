@@ -74,9 +74,20 @@
                             <span class="text-base sm:text-lg font-bold text-[#15202B] leading-tight">
                                 {% if detalle.plato_id %}{{ detalle.plato.nombre }}{% elif detalle.menu_id %}{{ detalle.menu.nombre }}{% endif %}
                             </span>
-                            {% if detalle.es_para_llevar %}
+                            {% if detalle.menu_id %}
+                                {% if detalle.entrada_para_llevar %}
+                                <span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                    <i class="ti ti-box text-xs"></i> Entrada Táper
+                                </span>
+                                {% endif %}
+                                {% if detalle.segundo_para_llevar %}
+                                <span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                    <i class="ti ti-box text-xs"></i> Segundo Táper
+                                </span>
+                                {% endif %}
+                            {% elif detalle.es_para_llevar %}
                             <span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
-                                <i class="ti ti-shopping-bag text-xs"></i> LLEVAR
+                                <i class="ti ti-box text-xs"></i> TÁPER
                             </span>
                             {% endif %}
                         </div>
@@ -277,11 +288,23 @@
 
                     let detallesHTML = '';
                     orden.detalles.forEach(det => {
-                        const llevarBadge = det.es_para_llevar
-                            ? `<span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
-                                   <i class="ti ti-shopping-bag text-xs"></i> LLEVAR
-                               </span>`
-                            : '';
+                        let llevarBadge = '';
+                        if (det.es_menu) {
+                            if (det.entrada_para_llevar) {
+                                llevarBadge += `<span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                                   <i class="ti ti-box text-xs"></i> Entrada Táper
+                                               </span>`;
+                            }
+                            if (det.segundo_para_llevar) {
+                                llevarBadge += `<span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                                   <i class="ti ti-box text-xs"></i> Segundo Táper
+                                               </span>`;
+                            }
+                        } else if (det.es_para_llevar) {
+                            llevarBadge = `<span class="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold rounded-md inline-flex items-center gap-1 shadow-xs">
+                                               <i class="ti ti-box text-xs"></i> TÁPER
+                                           </span>`;
+                        }
                         const notaPlatoBadge = det.nota
                             ? `<div class="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100/80 border border-amber-300/60 text-amber-900 rounded-lg font-bold text-xs">
                                    <i class="ti ti-note text-amber-700 text-sm"></i>
