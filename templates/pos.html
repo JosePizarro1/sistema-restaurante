@@ -200,7 +200,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     {% for plato in platos %}
-                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}" data-packable="{% if plato.categoria_id and plato.categoria.packable %}true{% else %}false{% endif %}">
+                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}">
                         {% if plato.imagen_base64 %}
                         <div class="h-36 overflow-hidden">
                             <img src="{{ plato.imagen_base64 }}" alt="{{ plato.imagen_alt|default:plato.nombre }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
@@ -223,7 +223,7 @@
                             </div>
                             <div class="flex justify-between items-center pt-3 border-t border-gray-50 mt-3">
                                 <span class="text-[#15202B] font-bold text-lg font-['Outfit']">S/ {{ plato.precio }}</span>
-                                <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre|escapejs }}', {{ plato.precio }}, '{{ plato.imagen_base64|default:''|escapejs }}', this)" class="w-10 h-10 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100">
+                                <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre|escapejs }}', {{ plato.precio }}, '{{ plato.imagen_base64|default:''|escapejs }}', {% if plato.categoria_id and plato.categoria.packable %}true{% else %}false{% endif %})" class="w-10 h-10 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100">
                                     <i class="ti ti-plus text-lg"></i>
                                 </button>
                             </div>
@@ -250,23 +250,12 @@
                     <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">Sin Cobrar</span>
                 </div>
 
-                <!-- Selector Tipo de Servicio: Mesa vs Llevar -->
+                <!-- Nota General / Nro Mesa — el tipo de servicio se elige en el Paso 1 -->
                 <div class="mb-3 space-y-2">
-                    <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
-                        <button type="button" onclick="setTipoServicio('MESA')" id="btn-servicio-mesa-dt" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs">
-                            <i class="ti ti-salad text-sm"></i>
-                            <span>En Mesa</span>
-                        </button>
-                        <button type="button" onclick="setTipoServicio('LLEVAR')" id="btn-servicio-llevar-dt" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black">
-                            <i class="ti ti-shopping-bag text-sm"></i>
-                            <span>Para Llevar</span>
-                        </button>
-                    </div>
-
                     <!-- Input Nota General / Nro Mesa -->
                     <div class="relative">
                         <i class="ti ti-bookmark text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="nota-general-input-dt" oninput="syncNotaGeneral(this.value)" placeholder="Mesa # / Nota General de la orden..." class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-[#15202B] placeholder-gray-400 focus:outline-none focus:border-primary-custom">
+                        <input type="text" id="nota-general-input-dt" readonly oninput="syncNotaGeneral(this.value)" placeholder="Mesa seleccionada (no editable)" class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 placeholder-gray-400 focus:outline-none cursor-default">
                     </div>
                 </div>
 
@@ -325,22 +314,11 @@
                 </button>
             </div>
 
-            <!-- Selector Tipo de Servicio Mobile -->
+            <!-- Nota General / Nro Mesa — el tipo de servicio se elige en el Paso 1 -->
             <div class="mt-3 space-y-2">
-                <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-xl">
-                    <button type="button" onclick="setTipoServicio('MESA')" id="btn-servicio-mesa-mb" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs">
-                        <i class="ti ti-salad text-sm"></i>
-                        <span>En Mesa</span>
-                    </button>
-                    <button type="button" onclick="setTipoServicio('LLEVAR')" id="btn-servicio-llevar-mb" class="py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500">
-                        <i class="ti ti-shopping-bag text-sm"></i>
-                        <span>Para Llevar</span>
-                    </button>
-                </div>
-
                 <div class="relative">
                     <i class="ti ti-bookmark text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                    <input type="text" id="nota-general-input-mb" oninput="syncNotaGeneral(this.value)" placeholder="Mesa # / Nota General de la orden..." class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-[#15202B] placeholder-gray-400 focus:outline-none focus:border-primary-custom">
+                    <input type="text" id="nota-general-input-mb" readonly oninput="syncNotaGeneral(this.value)" placeholder="Mesa seleccionada (no editable)" class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 placeholder-gray-400 focus:outline-none cursor-default">
                 </div>
             </div>
         </div>
@@ -625,10 +603,11 @@
     function actualizarBadgeMesa(texto) {
         const badge = document.getElementById('badge-mesa-seleccionada');
         if (badge) badge.innerText = texto;
+        // La nota general es automática (no editable): refleja la mesa/opción elegida.
         const inputNotaDt = document.getElementById('nota-general-input-dt');
         const inputNotaMb = document.getElementById('nota-general-input-mb');
-        if (inputNotaDt && !inputNotaDt.value) inputNotaDt.value = texto;
-        if (inputNotaMb && !inputNotaMb.value) inputNotaMb.value = texto;
+        if (inputNotaDt) inputNotaDt.value = texto;
+        if (inputNotaMb) inputNotaMb.value = texto;
         syncNotaGeneral(texto);
     }
 
@@ -650,27 +629,6 @@
             });
             renderCarrito();
             renderCarritoMobile();
-        }
-
-        const btnMesaDt = document.getElementById('btn-servicio-mesa-dt');
-        const btnLlevarDt = document.getElementById('btn-servicio-llevar-dt');
-        const btnMesaMb = document.getElementById('btn-servicio-mesa-mb');
-        const btnLlevarMb = document.getElementById('btn-servicio-llevar-mb');
-
-        if (tipo === 'MESA') {
-            [btnMesaDt, btnMesaMb].forEach(b => {
-                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-white text-primary-custom shadow-xs';
-            });
-            [btnLlevarDt, btnLlevarMb].forEach(b => {
-                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black';
-            });
-        } else {
-            [btnLlevarDt, btnLlevarMb].forEach(b => {
-                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all bg-amber-500 text-white shadow-xs';
-            });
-            [btnMesaDt, btnMesaMb].forEach(b => {
-                if(b) b.className = 'py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-gray-500 hover:text-black';
-            });
         }
     }
 
@@ -731,18 +689,14 @@
     }
 
     // ---- Carrito ----
-    function agregarAlCarrito(id, nombre, precio, imagen_base64 = '', btnEl = null) {
+    function agregarAlCarrito(id, nombre, precio, imagen_base64 = '', packable = false) {
         let item = carrito.find(i => (!i.tipo || i.tipo === 'plato') && i.id === id);
         if (item) {
             item.cantidad += 1;
         } else {
-            // packable: el recargo de táper solo aplica si la categoría del plato
-            // lo permite (mismo criterio que DetalleOrden.taper_count en el server).
-            let packable = false;
-            if (btnEl) {
-                const card = btnEl.closest('.dish-card');
-                if (card) packable = card.dataset.packable === 'true';
-            }
+            // packable llega como argumento desde el template: el recargo de táper
+            // solo aplica si la categoría del plato lo permite (mismo criterio que
+            // DetalleOrden.taper_count en el server).
             carrito.push({ 
                 id: id, 
                 tipo: 'plato',
@@ -751,7 +705,7 @@
                 cantidad: 1, 
                 nota: '',
                 imagen_base64: imagen_base64,
-                packable: packable,
+                packable: !!packable,
                 es_para_llevar: (tipoServicioActual === 'LLEVAR')
             });
         }
@@ -867,9 +821,13 @@
                 const badgeTag = esMenu 
                     ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-extrabold rounded-md border border-amber-200">🍱 MENÚ COMBO</span>`
                     : '';
-                const imgHTML = item.imagen_base64 
-                    ? `<img src="${item.imagen_base64}" class="${imgCls} object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
-                    : `<div class="${imgCls} ${esMenu ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200/60'} flex items-center justify-center shrink-0 border"><i class="${esMenu ? 'ti ti-category' : 'ti ti-salad'} text-base"></i></div>`;
+                const imgHTML = esMenu
+                    // Menú combo: ícono genérico siempre (la foto de un plato no
+                    // representa al combo completo).
+                    ? `<div class="${imgCls} bg-amber-50 text-amber-600 border-amber-200 flex items-center justify-center shrink-0 border shadow-xs"><i class="ti ti-category text-lg"></i></div>`
+                    : (item.imagen_base64 
+                        ? `<img src="${item.imagen_base64}" class="${imgCls} object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
+                        : `<div class="${imgCls} bg-gray-100 text-gray-400 border-gray-200/60 flex items-center justify-center shrink-0 border"><i class="ti ti-salad text-base"></i></div>`);
 
                 let llevarButtonsHTML = '';
                 if (tipoServicioActual === 'LLEVAR') {
@@ -908,7 +866,7 @@
                                 ${imgHTML}
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                                        <h4 class="text-xs font-bold text-[#15202B] mb-0 truncate">${item.nombre}</h4>
+                                        <h4 class="text-xs font-bold text-[#15202B] mb-0">${item.nombre}</h4>
                                         ${badgeTag}
                                         ${llevarButtonsHTML}
                                     </div>
@@ -1131,15 +1089,15 @@
         if (!entradaElegida || !segundoElegido) return;
         
         const nombreCombo = `Menú (${entradaElegida} + ${segundoElegido})`;
-        const notaCombo = `Entrada: ${entradaElegida} ${entradaParaLlevar ? '(Llevar)' : '(Mesa)'} | Segundo: ${segundoElegido} ${segundoParaLlevar ? '(Llevar)' : '(Mesa)'}`;
-        
+
         carrito.push({
             id: currentMenuModalData.id,
             tipo: 'menu',
             nombre: nombreCombo,
             precio: parseFloat(currentMenuModalData.precio),
             cantidad: 1,
-            nota: notaCombo,
+            // Nota vacía por defecto: el mozo escribe algo solo si lo necesita.
+            nota: '',
             entrada_para_llevar: entradaParaLlevar,
             segundo_para_llevar: segundoParaLlevar,
             es_para_llevar: (entradaParaLlevar || segundoParaLlevar),
@@ -1211,6 +1169,13 @@
                             onclick="seleccionarEntrada('{{ ent.nombre|escapejs }}', this)" 
                             data-img="{{ ent.imagen_base64|default:''|escapejs }}"
                             class="btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
+                        <div class="w-full h-16 rounded-lg overflow-hidden mb-2 bg-gray-100 flex items-center justify-center shrink-0">
+                            {% if ent.imagen_base64 %}
+                            <img src="{{ ent.imagen_base64 }}" alt="{{ ent.imagen_alt|default:ent.nombre }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            {% else %}
+                            <i class="ti ti-photo text-2xl text-gray-300"></i>
+                            {% endif %}
+                        </div>
                         <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900">{{ ent.nombre }}</span>
                         <span class="text-[10px] font-bold text-gray-400 mt-1 flex items-center gap-1">
                             <i class="ti ti-salad text-xs"></i> Entrada
@@ -1233,6 +1198,13 @@
                             onclick="seleccionarSegundo('{{ seg.nombre|escapejs }}', this)" 
                             data-img="{{ seg.imagen_base64|default:''|escapejs }}"
                             class="btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
+                        <div class="w-full h-16 rounded-lg overflow-hidden mb-2 bg-gray-100 flex items-center justify-center shrink-0">
+                            {% if seg.imagen_base64 %}
+                            <img src="{{ seg.imagen_base64 }}" alt="{{ seg.imagen_alt|default:seg.nombre }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            {% else %}
+                            <i class="ti ti-photo text-2xl text-gray-300"></i>
+                            {% endif %}
+                        </div>
                         <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900 line-clamp-1">{{ seg.nombre }}</span>
                         <span class="text-[10px] font-bold text-amber-700/70 mt-1 flex items-center gap-1">
                             <i class="ti ti-check-double text-xs"></i> Segundo
