@@ -17,14 +17,7 @@ def trigger_pusher_event(event_name, data=None):
         return
 
     try:
-        pusher_client = pusher.Pusher(
-            app_id=app_id,
-            key=key,
-            secret=secret,
-            cluster=cluster,
-            ssl=True
-        )
+        pusher_client = pusher.Pusher(app_id=app_id, key=key, secret=secret, cluster=cluster, ssl=True)
         pusher_client.trigger('cocina-channel', event_name, data or {})
     except Exception as e:  # noqa: BLE001
         print(f"Error al disparar evento Pusher '{event_name}': {e}")
-

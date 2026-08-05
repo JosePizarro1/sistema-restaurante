@@ -200,7 +200,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     {% for plato in platos %}
-                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}">
+                    <div class="dish-card bg-white rounded-[20px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/40 transition-all duration-300 flex flex-col" data-categoria-id="{{ plato.categoria_id|default:'' }}" data-packable="{% if plato.categoria_id and plato.categoria.packable %}true{% else %}false{% endif %}">
                         {% if plato.imagen_base64 %}
                         <div class="h-36 overflow-hidden">
                             <img src="{{ plato.imagen_base64 }}" alt="{{ plato.imagen_alt|default:plato.nombre }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
@@ -223,7 +223,7 @@
                             </div>
                             <div class="flex justify-between items-center pt-3 border-t border-gray-50 mt-3">
                                 <span class="text-[#15202B] font-bold text-lg font-['Outfit']">S/ {{ plato.precio }}</span>
-                                <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre|escapejs }}', {{ plato.precio }}, '{{ plato.imagen_base64|default:''|escapejs }}')" class="w-10 h-10 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100">
+                                <button onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre|escapejs }}', {{ plato.precio }}, '{{ plato.imagen_base64|default:''|escapejs }}', this)" class="w-10 h-10 bg-gray-50 text-[#15202B] rounded-xl flex items-center justify-center hover:bg-primary-custom hover:text-white transition-all transform active:scale-95 border border-gray-100">
                                     <i class="ti ti-plus text-lg"></i>
                                 </button>
                             </div>
@@ -314,9 +314,9 @@
     <div id="drawer-overlay" class="lg:hidden fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300" onclick="cerrarDrawer()"></div>
 
     <!-- Drawer de Comanda (mobile) -->
-    <div id="comanda-drawer" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl translate-y-full transition-transform duration-300 ease-out" style="max-height:88vh;">
+    <div id="comanda-drawer" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl translate-y-full transition-transform duration-300 ease-out flex flex-col" style="max-height:88vh;">
         <!-- Handle + Header -->
-        <div class="flex flex-col px-5 pt-4">
+        <div class="flex flex-col px-5 pt-4 shrink-0">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-3"></div>
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <h2 class="text-lg font-['Outfit'] font-bold">Nueva Comanda</h2>
@@ -344,11 +344,11 @@
                 </div>
             </div>
         </div>
-        <!-- Items -->
-        <div class="overflow-y-auto px-5 py-3 space-y-3" style="max-height:calc(88vh - 310px);" id="carrito-body-mobile">
+        <!-- Items: flex-1 para que el área de scroll se adapte al alto real del drawer -->
+        <div class="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3" id="carrito-body-mobile">
         </div>
         <!-- Total + Botón -->
-        <div class="px-5 pt-3 pb-6 border-t border-gray-100 bg-white space-y-3">
+        <div class="px-5 pt-3 pb-6 border-t border-gray-100 bg-white space-y-3 shrink-0">
             <div class="space-y-1 text-xs text-gray-500 font-bold border-b border-gray-100 pb-2">
                 <div class="flex justify-between">
                     <span>Subtotal Platos / Menús</span>
@@ -636,6 +636,22 @@
         tipoServicioActual = tipo;
         document.getElementById('input_tipo_servicio').value = tipo;
 
+        // Si la orden completa pasa a LLEVAR, el servidor fuerza llevar en todos
+        // los ítems (views.pos_view), así que reconciliamos el carrito para que
+        // la vista previa (táperes incluidos) coincida con el cobro real.
+        if (tipo === 'LLEVAR') {
+            carrito.forEach(item => {
+                if (item.tipo === 'menu') {
+                    item.entrada_para_llevar = true;
+                    item.segundo_para_llevar = true;
+                } else {
+                    item.es_para_llevar = true;
+                }
+            });
+            renderCarrito();
+            renderCarritoMobile();
+        }
+
         const btnMesaDt = document.getElementById('btn-servicio-mesa-dt');
         const btnLlevarDt = document.getElementById('btn-servicio-llevar-dt');
         const btnMesaMb = document.getElementById('btn-servicio-mesa-mb');
@@ -715,11 +731,18 @@
     }
 
     // ---- Carrito ----
-    function agregarAlCarrito(id, nombre, precio, imagen_base64 = '') {
+    function agregarAlCarrito(id, nombre, precio, imagen_base64 = '', btnEl = null) {
         let item = carrito.find(i => (!i.tipo || i.tipo === 'plato') && i.id === id);
         if (item) {
             item.cantidad += 1;
         } else {
+            // packable: el recargo de táper solo aplica si la categoría del plato
+            // lo permite (mismo criterio que DetalleOrden.taper_count en el server).
+            let packable = false;
+            if (btnEl) {
+                const card = btnEl.closest('.dish-card');
+                if (card) packable = card.dataset.packable === 'true';
+            }
             carrito.push({ 
                 id: id, 
                 tipo: 'plato',
@@ -728,6 +751,7 @@
                 cantidad: 1, 
                 nota: '',
                 imagen_base64: imagen_base64,
+                packable: packable,
                 es_para_llevar: (tipoServicioActual === 'LLEVAR')
             });
         }
@@ -810,7 +834,7 @@
         }
     }
 
-    function buildItemsHTML(container, targetFn) {
+    function buildItemsHTML(container, targetFn, compact = false) {
         let total = 0;
         if (carrito.length === 0) {
             container.innerHTML = `
@@ -826,7 +850,7 @@
                 if (item.tipo === 'menu') {
                     if (item.entrada_para_llevar) tapers += item.cantidad;
                     if (item.segundo_para_llevar) tapers += item.cantidad;
-                } else if (item.es_para_llevar) {
+                } else if (item.es_para_llevar && item.packable) {
                     tapers += item.cantidad;
                 }
                 let recargoTaper = tapers * 1.00;
@@ -835,15 +859,25 @@
                 const notaEscaped = (item.nota || '').replace(/"/g, '&quot;');
                 const esLlevar = item.es_para_llevar;
                 const esMenu = (item.tipo === 'menu');
+                // Compacto = vista móvil del drawer: menos padding y controles más táctiles.
+                const itemCls = compact ? 'p-2.5' : 'p-3';
+                const imgCls = compact ? 'w-9 h-9 rounded-lg' : 'w-10 h-10 rounded-xl';
+                const stepCls = compact ? 'w-6 h-6 text-sm' : 'w-5 h-5 text-xs';
+                const priceCls = compact ? 'text-[11px] w-12' : 'text-xs w-14';
                 const badgeTag = esMenu 
                     ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-extrabold rounded-md border border-amber-200">🍱 MENÚ COMBO</span>`
                     : '';
                 const imgHTML = item.imagen_base64 
-                    ? `<img src="${item.imagen_base64}" class="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
-                    : `<div class="w-10 h-10 rounded-xl ${esMenu ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200/60'} flex items-center justify-center shrink-0 border"><i class="${esMenu ? 'ti ti-category' : 'ti ti-salad'} text-base"></i></div>`;
+                    ? `<img src="${item.imagen_base64}" class="${imgCls} object-cover shrink-0 border border-gray-200 shadow-xs" alt="${item.nombre}">`
+                    : `<div class="${imgCls} ${esMenu ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200/60'} flex items-center justify-center shrink-0 border"><i class="${esMenu ? 'ti ti-category' : 'ti ti-salad'} text-base"></i></div>`;
 
                 let llevarButtonsHTML = '';
-                if (esMenu) {
+                if (tipoServicioActual === 'LLEVAR') {
+                    // Orden completa "Para Llevar": el servidor fuerza llevar en
+                    // todos los ítems (views.pos_view), así que el toggle por
+                    // ítem es redundante — se muestra un badge informativo.
+                    llevarButtonsHTML = `<span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border bg-amber-50 text-amber-800 border-amber-200">🥡 Para Llevar</span>`;
+                } else if (esMenu) {
                     llevarButtonsHTML = `
                         <button type="button" 
                                 onclick="toggleEntradaItem(${idx})" 
@@ -868,7 +902,7 @@
                 }
 
                 container.innerHTML += `
-                    <div class="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-2">
+                    <div class="${itemCls} bg-gray-50 border border-gray-100 rounded-xl space-y-2">
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5 flex-1 min-w-0 pr-1">
                                 ${imgHTML}
@@ -883,11 +917,11 @@
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1">
-                                    <button onclick="${targetFn}(${idx}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">-</button>
+                                    <button onclick="${targetFn}(${idx}, -1)" class="${stepCls} flex items-center justify-center text-gray-400 hover:text-black">-</button>
                                     <span class="w-5 text-center text-xs font-bold">${item.cantidad}</span>
-                                    <button onclick="${targetFn}(${idx}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-black">+</button>
+                                    <button onclick="${targetFn}(${idx}, 1)" class="${stepCls} flex items-center justify-center text-gray-400 hover:text-black">+</button>
                                 </div>
-                                <span class="text-xs font-bold w-14 text-end">S/ ${subtotal.toFixed(2)}</span>
+                                <span class="${priceCls} font-bold text-end">S/ ${subtotal.toFixed(2)}</span>
                             </div>
                         </div>
                         <!-- Campo de Nota Especial -->
@@ -908,14 +942,14 @@
 
     function renderCarrito() {
         const body = document.getElementById('carrito-body');
-        const total = buildItemsHTML(body, 'cambiarCantidad');
+        const total = buildItemsHTML(body, 'cambiarCantidad', false);
         document.getElementById('total-monto').innerText = `S/ ${total.toFixed(2)}`;
         actualizarFABBadge();
     }
 
     function renderCarritoMobile() {
         const body = document.getElementById('carrito-body-mobile');
-        const total = buildItemsHTML(body, 'cambiarCantidadMobile');
+        const total = buildItemsHTML(body, 'cambiarCantidadMobile', true);
         document.getElementById('total-monto-mobile').innerText = `S/ ${total.toFixed(2)}`;
     }
 
@@ -996,11 +1030,16 @@
     let segundoElegido = null;
     let entradaParaLlevar = false;
     let segundoParaLlevar = false;
+    // Imágenes base64 de la entrada/segundo elegidos, para mini-thumb del menú en el carrito.
+    let entradaElegidaImg = '';
+    let segundoElegidoImg = '';
 
     function abrirModalMenu(menuId, menuNombre, menuPrecio) {
         currentMenuModalData = { id: menuId, nombre: menuNombre, precio: menuPrecio };
         entradaElegida = null;
         segundoElegido = null;
+        entradaElegidaImg = '';
+        segundoElegidoImg = '';
         entradaParaLlevar = (tipoServicioActual === 'LLEVAR');
         segundoParaLlevar = (tipoServicioActual === 'LLEVAR');
         
@@ -1059,6 +1098,7 @@
 
     function seleccionarEntrada(nombre, btnEl) {
         entradaElegida = nombre;
+        entradaElegidaImg = btnEl.dataset.img || '';
         document.querySelectorAll('.btn-entrada-item').forEach(btn => {
             btn.className = 'btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
         });
@@ -1069,6 +1109,7 @@
 
     function seleccionarSegundo(nombre, btnEl) {
         segundoElegido = nombre;
+        segundoElegidoImg = btnEl.dataset.img || '';
         document.querySelectorAll('.btn-segundo-item').forEach(btn => {
             btn.className = 'btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group';
         });
@@ -1102,7 +1143,7 @@
             entrada_para_llevar: entradaParaLlevar,
             segundo_para_llevar: segundoParaLlevar,
             es_para_llevar: (entradaParaLlevar || segundoParaLlevar),
-            imagen_base64: ''
+            imagen_base64: (entradaElegidaImg || segundoElegidoImg || '')
         });
 
         renderCarrito();
@@ -1168,6 +1209,7 @@
                     {% for ent in entradas %}
                     <button type="button" 
                             onclick="seleccionarEntrada('{{ ent.nombre|escapejs }}', this)" 
+                            data-img="{{ ent.imagen_base64|default:''|escapejs }}"
                             class="btn-entrada-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
                         <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900">{{ ent.nombre }}</span>
                         <span class="text-[10px] font-bold text-gray-400 mt-1 flex items-center gap-1">
@@ -1189,6 +1231,7 @@
                     {% for seg in segundos %}
                     <button type="button" 
                             onclick="seleccionarSegundo('{{ seg.nombre|escapejs }}', this)" 
+                            data-img="{{ seg.imagen_base64|default:''|escapejs }}"
                             class="btn-segundo-item p-3 bg-gray-50 hover:bg-amber-50/70 border border-gray-200 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-between group">
                         <span class="text-xs font-bold text-[#15202B] group-hover:text-amber-900 line-clamp-1">{{ seg.nombre }}</span>
                         <span class="text-[10px] font-bold text-amber-700/70 mt-1 flex items-center gap-1">

@@ -40,7 +40,7 @@ class PlatoForm(forms.ModelForm):
             img.save(buffer, format='JPEG', quality=70, optimize=True)
             buffer.seek(0)
             encoded = base64.b64encode(buffer.read()).decode('utf-8')
-            instance.imagen_base64 = f"data:image/jpeg;base64,{encoded}"
+            instance.imagen_base64 = f'data:image/jpeg;base64,{encoded}'
 
         if commit:
             instance.save()
@@ -60,15 +60,14 @@ class PlatoAdmin(admin.ModelAdmin):
         if obj.imagen_base64:
             return format_html('<img src="{}" style="height:40px;border-radius:6px;">', obj.imagen_base64)
         return '—'
+
     preview_imagen.short_description = 'Vista previa'
 
     def preview_admin(self, obj):
         if obj.imagen_base64:
-            return format_html(
-                '<img src="{}" style="max-width:300px;max-height:200px;border-radius:10px;border:1px solid #eee;">',
-                obj.imagen_base64
-            )
+            return format_html('<img src="{}" style="max-width:300px;max-height:200px;border-radius:10px;border:1px solid #eee;">', obj.imagen_base64)
         return 'No hay imagen cargada.'
+
     preview_admin.short_description = 'Imagen actual'
 
 

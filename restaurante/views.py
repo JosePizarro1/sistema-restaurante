@@ -23,11 +23,9 @@ from .pusher_utils import trigger_pusher_event
 
 
 def superuser_required(view_func):
-    decorator = user_passes_test(
-        lambda u: u.is_authenticated and u.is_superuser,
-        login_url='/login/'
-    )
+    decorator = user_passes_test(lambda u: u.is_authenticated and u.is_superuser, login_url='/login/')
     return decorator(view_func)
+
 
 def process_image_to_base64(imagen_file):
     img = Image.open(imagen_file)
@@ -38,10 +36,12 @@ def process_image_to_base64(imagen_file):
     img.save(buffer, format='JPEG', quality=70, optimize=True)
     buffer.seek(0)
     encoded = base64.b64encode(buffer.read()).decode('utf-8')
-    return f"data:image/jpeg;base64,{encoded}"
+    return f'data:image/jpeg;base64,{encoded}'
+
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
+
 
 @login_required
 def pos_view(request):
@@ -81,24 +81,28 @@ def pos_view(request):
                 if (tipo_servicio == 'LLEVAR' or es_para_llevar) and not entrada_llevar and not segundo_llevar:
                     entrada_llevar = True
                     segundo_llevar = True
-                lineas.append({
-                    'menu': menu,
-                    'precio_unitario': menu.precio,
-                    'cantidad': cantidad,
-                    'nota': nota,
-                    'es_para_llevar': (entrada_llevar or segundo_llevar),
-                    'entrada_para_llevar': entrada_llevar,
-                    'segundo_para_llevar': segundo_llevar,
-                })
+                lineas.append(
+                    {
+                        'menu': menu,
+                        'precio_unitario': menu.precio,
+                        'cantidad': cantidad,
+                        'nota': nota,
+                        'es_para_llevar': (entrada_llevar or segundo_llevar),
+                        'entrada_para_llevar': entrada_llevar,
+                        'segundo_para_llevar': segundo_llevar,
+                    }
+                )
             else:
                 plato = get_object_or_404(Plato, id=item['id'], activo=True)
-                lineas.append({
-                    'plato': plato,
-                    'precio_unitario': plato.precio,
-                    'cantidad': cantidad,
-                    'nota': nota,
-                    'es_para_llevar': es_para_llevar,
-                })
+                lineas.append(
+                    {
+                        'plato': plato,
+                        'precio_unitario': plato.precio,
+                        'cantidad': cantidad,
+                        'nota': nota,
+                        'es_para_llevar': es_para_llevar,
+                    }
+                )
 
         mesa_id = request.POST.get('mesa_id')
         mesa = None
@@ -139,17 +143,22 @@ def pos_view(request):
     categorias = Categoria.objects.filter(activo=True).order_by('orden', 'nombre')
     menus = Menu.objects.filter(activo=True).select_related('categoria_entrada', 'categoria_segundo')
     configuracion = Configuracion.get()
-    return render(request, 'pos.html', {
-        'ambientes': ambientes,
-        'platos': platos,
-        'menus': menus,
-        'entradas': entradas,
-        'segundos': segundos,
-        'ordenes_listas': ordenes_listas,
-        'categorias': categorias,
-        'configuracion': configuracion,
-        'recargo_taper': configuracion.recargo_por_taper,
-    })
+    return render(
+        request,
+        'pos.html',
+        {
+            'ambientes': ambientes,
+            'platos': platos,
+            'menus': menus,
+            'entradas': entradas,
+            'segundos': segundos,
+            'ordenes_listas': ordenes_listas,
+            'categorias': categorias,
+            'configuracion': configuracion,
+            'recargo_taper': configuracion.recargo_por_taper,
+        },
+    )
+
 
 @login_required
 def cobrar_orden(request, orden_id):
@@ -169,10 +178,12 @@ def cobrar_orden(request, orden_id):
             messages.success(request, f'¡Orden #{orden.id} cobrada y cerrada exitosamente con {orden.get_metodo_pago_display()}!')
     return redirect('pos')
 
+
 @login_required
 def cocina_view(request):
     ordenes_pendientes = Orden.objects.filter(estado='PENDIENTE').prefetch_related('detalles__plato', 'detalles__menu')
     return render(request, 'cocina.html', {'ordenes': ordenes_pendientes})
+
 
 @login_required
 def api_cocina_ordenes(request):
@@ -184,22 +195,27 @@ def api_cocina_ordenes(request):
             # A Menu line has plato=None; resolve the display name safely so a
             # sold Menu doesn't 500 the kitchen feed.
             nombre = det.plato.nombre if det.plato_id else (det.menu.nombre if det.menu_id else '')
-            detalles.append({
-                'plato_nombre': nombre,
-                'cantidad': det.cantidad,
-                'nota': det.nota,
-                'es_para_llevar': det.es_para_llevar,
-            })
+            detalles.append(
+                {
+                    'plato_nombre': nombre,
+                    'cantidad': det.cantidad,
+                    'nota': det.nota,
+                    'es_para_llevar': det.es_para_llevar,
+                }
+            )
         fecha_local = timezone.localtime(orden.fecha_creacion)
-        data.append({
-            'id': orden.id,
-            'fecha_creacion': orden.fecha_creacion.isoformat(),
-            'hora_str': fecha_local.strftime('%H:%M'),
-            'tipo_servicio': orden.tipo_servicio,
-            'nota_general': orden.nota_general,
-            'detalles': detalles
-        })
+        data.append(
+            {
+                'id': orden.id,
+                'fecha_creacion': orden.fecha_creacion.isoformat(),
+                'hora_str': fecha_local.strftime('%H:%M'),
+                'tipo_servicio': orden.tipo_servicio,
+                'nota_general': orden.nota_general,
+                'detalles': detalles,
+            }
+        )
     return JsonResponse({'ordenes': data})
+
 
 @login_required
 def cambiar_estado_orden(request, orden_id, nuevo_estado):
@@ -215,6 +231,7 @@ def cambiar_estado_orden(request, orden_id, nuevo_estado):
     if request.GET.get('ajax') == '1':
         return JsonResponse({'status': 'ok'})
     return redirect('cocina')
+
 
 @login_required
 def reportes_view(request):
@@ -256,11 +273,7 @@ def reportes_view(request):
         fecha_fin = date(anio_sel, mes_sel, num_days)
 
     # Filtrar órdenes cerradas (PAGADO) en el rango seleccionado
-    ordenes_periodo = Orden.objects.filter(
-        fecha_creacion__date__gte=fecha_inicio,
-        fecha_creacion__date__lte=fecha_fin,
-        estado='PAGADO'
-    )
+    ordenes_periodo = Orden.objects.filter(fecha_creacion__date__gte=fecha_inicio, fecha_creacion__date__lte=fecha_fin, estado='PAGADO')
 
     recargo_taper_unitario = Configuracion.get().recargo_por_taper
     detalles_periodo = DetalleOrden.objects.filter(orden__in=ordenes_periodo).select_related('plato__categoria', 'menu', 'orden')
@@ -290,9 +303,7 @@ def reportes_view(request):
     menus_mas_vendidos = detalles_periodo.filter(menu__isnull=False).values('menu__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:5]
 
     # Agrupación diaria para el gráfico de líneas
-    ventas_diarias_qs = ordenes_periodo.annotate(dia=TruncDate('fecha_creacion')) \
-        .values('dia') \
-        .annotate(total_dia=Sum('total'))
+    ventas_diarias_qs = ordenes_periodo.annotate(dia=TruncDate('fecha_creacion')).values('dia').annotate(total_dia=Sum('total'))
 
     ventas_dict = {item['dia']: float(item['total_dia']) for item in ventas_diarias_qs}
 
@@ -307,9 +318,18 @@ def reportes_view(request):
         curr += timedelta(days=1)
 
     meses_nombres = [
-        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
-        (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
-        (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+        (1, 'Enero'),
+        (2, 'Febrero'),
+        (3, 'Marzo'),
+        (4, 'Abril'),
+        (5, 'Mayo'),
+        (6, 'Junio'),
+        (7, 'Julio'),
+        (8, 'Agosto'),
+        (9, 'Septiembre'),
+        (10, 'Octubre'),
+        (11, 'Noviembre'),
+        (12, 'Diciembre'),
     ]
     anios_disponibles = list(range(hoy.year - 2, hoy.year + 2))
 
@@ -343,15 +363,16 @@ def reportes_view(request):
     return render(request, 'reportes.html', context)
 
 
-
 # ==========================================
 # MÓDULO CRUD DE PLATOS (SOLO SUPERUSUARIOS)
 # ==========================================
+
 
 @superuser_required
 def platos_list_view(request):
     platos = Plato.objects.all().order_by('-activo', 'nombre')
     return render(request, 'platos/lista.html', {'platos': platos})
+
 
 @superuser_required
 def plato_create_view(request):
@@ -382,6 +403,7 @@ def plato_create_view(request):
         return redirect('platos_list')
 
     return render(request, 'platos/form.html', {'categorias': categorias, 'titulo': 'Nuevo Plato'})
+
 
 @superuser_required
 def plato_edit_view(request, plato_id):
@@ -424,9 +446,10 @@ def plato_toggle_status_view(request, plato_id):
     plato = get_object_or_404(Plato, id=plato_id)
     plato.activo = not plato.activo
     plato.save()
-    estado_str = "activado" if plato.activo else "desactivado"
+    estado_str = 'activado' if plato.activo else 'desactivado'
     messages.success(request, f'Plato "{plato.nombre}" {estado_str}.')
     return redirect('platos_list')
+
 
 @superuser_required
 @require_POST
@@ -448,10 +471,12 @@ def plato_delete_view(request, plato_id):
 # MÓDULO CRUD DE CATEGORÍAS (SUPERUSUARIOS)
 # ==========================================
 
+
 @superuser_required
 def categorias_list_view(request):
     categorias = Categoria.objects.annotate(total_platos=Count('platos')).order_by('orden', 'nombre')
     return render(request, 'categorias/lista.html', {'categorias': categorias})
+
 
 @superuser_required
 def categoria_create_view(request):
@@ -473,6 +498,7 @@ def categoria_create_view(request):
             return render(request, 'categorias/form.html', {'titulo': 'Nueva Categoría'})
 
     return render(request, 'categorias/form.html', {'titulo': 'Nueva Categoría'})
+
 
 @superuser_required
 def categoria_edit_view(request, categoria_id):
@@ -498,6 +524,7 @@ def categoria_edit_view(request, categoria_id):
             return render(request, 'categorias/form.html', {'categoria': categoria, 'titulo': f'Editar {categoria.nombre}'})
 
     return render(request, 'categorias/form.html', {'categoria': categoria, 'titulo': f'Editar {categoria.nombre}'})
+
 
 @superuser_required
 @require_POST
@@ -593,6 +620,3 @@ def ambiente_delete_view(request, ambiente_id):
     ambiente.delete()
     messages.success(request, f'Ambiente "{nombre}" y sus mesas fueron eliminados.')
     return redirect('mesas_configuracion')
-
-
-

@@ -40,12 +40,12 @@ class Plato(models.Model):
     imagen_alt = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
-        return f"{self.nombre} - S/. {self.precio}"
+        return f'{self.nombre} - S/. {self.precio}'
 
 
 class Menu(models.Model):
-    nombre = models.CharField(max_length=50, default="Menú")
-    precio = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("13.00"))
+    nombre = models.CharField(max_length=50, default='Menú')
+    precio = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('13.00'))
     categoria_entrada = models.ForeignKey(
         Categoria,
         related_name='menus_entrada',
@@ -63,18 +63,18 @@ class Menu(models.Model):
         verbose_name_plural = 'Menús'
 
     def __str__(self):
-        return f"{self.nombre} - S/. {self.precio}"
+        return f'{self.nombre} - S/. {self.precio}'
 
 
 class Configuracion(models.Model):
-    recargo_por_taper = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("1.00"))
+    recargo_por_taper = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('1.00'))
 
     class Meta:
         verbose_name = 'Configuración'
         verbose_name_plural = 'Configuración'
 
     def __str__(self):
-        return f"Configuración (recargo por taper: S/. {self.recargo_por_taper})"
+        return f'Configuración (recargo por taper: S/. {self.recargo_por_taper})'
 
     @classmethod
     def get(cls):
@@ -126,7 +126,7 @@ class Mesa(models.Model):
         verbose_name_plural = 'Mesas'
 
     def __str__(self):
-        return f"{self.numero} ({self.ambiente.nombre})"
+        return f'{self.numero} ({self.ambiente.nombre})'
 
 
 class Orden(models.Model):
@@ -161,7 +161,7 @@ class Orden(models.Model):
         ordering = ('-fecha_creacion',)
 
     def __str__(self):
-        return f"Orden #{self.id} - {self.estado} ({self.get_metodo_pago_display()})"
+        return f'Orden #{self.id} - {self.estado} ({self.get_metodo_pago_display()})'
 
     @property
     def total_tapers(self):
@@ -176,7 +176,7 @@ class Orden(models.Model):
         tapers = self.total_tapers
         if tapers > 0:
             return tapers * Configuracion.get().recargo_por_taper
-        return Decimal("0.00")
+        return Decimal('0.00')
 
     def computar_total(self):
         total = self.subtotal_consumo
@@ -204,11 +204,8 @@ class DetalleOrden(models.Model):
         # can persist.
         constraints: ClassVar[list[models.CheckConstraint]] = [
             models.CheckConstraint(
-                name="detalle_orden_exactly_one_plato_or_menu",
-                condition=(
-                    models.Q(plato__isnull=False) & models.Q(menu__isnull=True)
-                )
-                | (models.Q(plato__isnull=True) & models.Q(menu__isnull=False)),
+                name='detalle_orden_exactly_one_plato_or_menu',
+                condition=(models.Q(plato__isnull=False) & models.Q(menu__isnull=True)) | (models.Q(plato__isnull=True) & models.Q(menu__isnull=False)),
             ),
         ]
 
@@ -226,12 +223,7 @@ class DetalleOrden(models.Model):
             if count == 0 and is_llevar:
                 count = 2
             return count * self.cantidad
-        if (
-            self.plato_id is not None
-            and is_llevar
-            and self.plato.categoria_id is not None
-            and self.plato.categoria.packable
-        ):
+        if self.plato_id is not None and is_llevar and self.plato.categoria_id is not None and self.plato.categoria.packable:
             return self.cantidad
         return 0
 
@@ -240,6 +232,4 @@ class DetalleOrden(models.Model):
         # no line pricing a composite menu AND a single plato (both).
         super().clean()
         if (self.plato_id is None) == (self.menu_id is None):
-            raise ValidationError(
-                "Cada línea de orden debe referenciar exactamente un plato o un menú."
-            )
+            raise ValidationError('Cada línea de orden debe referenciar exactamente un plato o un menú.')

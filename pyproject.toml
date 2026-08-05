@@ -14,6 +14,10 @@ dependencies = [
 extend-exclude = ["*/migrations/*"]
 line-length = 180
 
+[tool.ruff.format]
+# El código legado del proyecto usa comillas simples; respetamos esa convención
+quote-style = "single"
+
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]

@@ -14,12 +14,12 @@ from .models import Ambiente, Categoria, Configuracion, DetalleOrden, Menu, Mesa
 
 class CategoriaModelTest(TestCase):
     def setUp(self):
-        self.cat1 = Categoria.objects.create(nombre="Entradas", orden=1)
-        self.cat2 = Categoria.objects.create(nombre="Bebidas", orden=2)
+        self.cat1 = Categoria.objects.create(nombre='Entradas', orden=1)
+        self.cat2 = Categoria.objects.create(nombre='Bebidas', orden=2)
 
     def test_categoria_creation(self):
-        self.assertEqual(self.cat1.nombre, "Entradas")
-        self.assertEqual(str(self.cat1), "Entradas")
+        self.assertEqual(self.cat1.nombre, 'Entradas')
+        self.assertEqual(str(self.cat1), 'Entradas')
         self.assertTrue(self.cat1.activo)
 
     def test_categoria_ordering(self):
@@ -29,29 +29,20 @@ class CategoriaModelTest(TestCase):
 
 class PlatoModelTest(TestCase):
     def setUp(self):
-        self.cat = Categoria.objects.create(nombre="Picantería Arequipeña", orden=1)
-        self.plato = Plato.objects.create(
-            nombre="Rocoto Relleno",
-            precio=25.50,
-            categoria=self.cat
-        )
+        self.cat = Categoria.objects.create(nombre='Picantería Arequipeña', orden=1)
+        self.plato = Plato.objects.create(nombre='Rocoto Relleno', precio=25.50, categoria=self.cat)
 
     def test_plato_creation(self):
-        self.assertEqual(self.plato.nombre, "Rocoto Relleno")
+        self.assertEqual(self.plato.nombre, 'Rocoto Relleno')
         self.assertEqual(self.plato.categoria, self.cat)
-        self.assertEqual(str(self.plato), "Rocoto Relleno - S/. 25.5")
+        self.assertEqual(str(self.plato), 'Rocoto Relleno - S/. 25.5')
 
 
 class OrdenModelTest(TestCase):
     def setUp(self):
-        self.plato = Plato.objects.create(nombre="Chupe de Camarones", precio=35.00)
+        self.plato = Plato.objects.create(nombre='Chupe de Camarones', precio=35.00)
         self.orden = Orden.objects.create(metodo_pago='PENDIENTE', estado='PENDIENTE', total=70.00)
-        self.detalle = DetalleOrden.objects.create(
-            orden=self.orden,
-            plato=self.plato,
-            cantidad=2,
-            precio_unitario=35.00
-        )
+        self.detalle = DetalleOrden.objects.create(orden=self.orden, plato=self.plato, cantidad=2, precio_unitario=35.00)
 
     def test_subtotal_calculation(self):
         self.assertEqual(self.detalle.subtotal(), 70.00)
@@ -88,33 +79,25 @@ class CategoriaCRUDTest(TestCase):
         self.client.login(username='admin', password='password123')
 
     def test_categorias_list_view(self):
-        Categoria.objects.create(nombre="Postres", orden=1)
+        Categoria.objects.create(nombre='Postres', orden=1)
         response = self.client.get(reverse('categorias_list'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Postres")
+        self.assertContains(response, 'Postres')
 
     def test_categoria_create_view(self):
-        response = self.client.post(reverse('categoria_create'), {
-            'nombre': 'Jugos Naturales',
-            'orden': 3,
-            'activo': 'on'
-        })
+        response = self.client.post(reverse('categoria_create'), {'nombre': 'Jugos Naturales', 'orden': 3, 'activo': 'on'})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Categoria.objects.filter(nombre='Jugos Naturales').exists())
 
     def test_categoria_edit_view(self):
-        cat = Categoria.objects.create(nombre="Antigua", orden=1)
-        response = self.client.post(reverse('categoria_edit', args=[cat.id]), {
-            'nombre': 'Editada',
-            'orden': 5,
-            'activo': 'on'
-        })
+        cat = Categoria.objects.create(nombre='Antigua', orden=1)
+        response = self.client.post(reverse('categoria_edit', args=[cat.id]), {'nombre': 'Editada', 'orden': 5, 'activo': 'on'})
         self.assertEqual(response.status_code, 302)
         cat.refresh_from_db()
         self.assertEqual(cat.nombre, 'Editada')
 
     def test_categoria_delete_view(self):
-        cat = Categoria.objects.create(nombre="Para Borrar", orden=1)
+        cat = Categoria.objects.create(nombre='Para Borrar', orden=1)
         response = self.client.post(reverse('categoria_delete', args=[cat.id]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Categoria.objects.filter(id=cat.id).exists())
@@ -122,23 +105,23 @@ class CategoriaCRUDTest(TestCase):
 
 class MenuModelTest(TestCase):
     def setUp(self):
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2)
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2)
         self.menu = Menu.objects.create(
             categoria_entrada=self.entrada,
             categoria_segundo=self.segundo,
         )
 
     def test_menu_defaults(self):
-        self.assertEqual(self.menu.nombre, "Menú")
-        self.assertEqual(self.menu.precio, Decimal("13.00"))
+        self.assertEqual(self.menu.nombre, 'Menú')
+        self.assertEqual(self.menu.precio, Decimal('13.00'))
         self.assertTrue(self.menu.activo)
 
     def test_menu_price_admin_editable(self):
-        self.menu.precio = Decimal("15.00")
+        self.menu.precio = Decimal('15.00')
         self.menu.save()
         self.menu.refresh_from_db()
-        self.assertEqual(self.menu.precio, Decimal("15.00"))
+        self.assertEqual(self.menu.precio, Decimal('15.00'))
 
     def test_menu_references_entrada_and_segundo_categories(self):
         self.assertEqual(self.menu.categoria_entrada, self.entrada)
@@ -159,8 +142,8 @@ class MenuModelTest(TestCase):
     def test_menu_line_prices_as_a_unit(self):
         # Any Entrada + any Segundo from the eligible categories: fixed menu price,
         # not the sum of the constituent platos.
-        Plato.objects.create(nombre="Sopa de Res", precio=6.00, categoria=self.entrada)
-        Plato.objects.create(nombre="Lomo Saltado", precio=11.00, categoria=self.segundo)
+        Plato.objects.create(nombre='Sopa de Res', precio=6.00, categoria=self.entrada)
+        Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.segundo)
         orden = Orden.objects.create(tipo_servicio='MESA')
         detalle = DetalleOrden.objects.create(
             orden=orden,
@@ -168,20 +151,20 @@ class MenuModelTest(TestCase):
             cantidad=2,
             precio_unitario=self.menu.precio,
         )
-        self.assertEqual(detalle.subtotal(), Decimal("26.00"))
+        self.assertEqual(detalle.subtotal(), Decimal('26.00'))
 
 
 class ConfiguracionModelTest(TestCase):
     def test_get_returns_singleton_with_default_recargo(self):
         cfg = Configuracion.get()
         self.assertEqual(cfg.id, 1)
-        self.assertEqual(cfg.recargo_por_taper, Decimal("1.00"))
+        self.assertEqual(cfg.recargo_por_taper, Decimal('1.00'))
 
     def test_recargo_admin_editable(self):
         cfg = Configuracion.get()
-        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.recargo_por_taper = Decimal('2.00')
         cfg.save()
-        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("2.00"))
+        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal('2.00'))
 
     def test_get_never_duplicates_singleton(self):
         Configuracion.get()
@@ -191,22 +174,16 @@ class ConfiguracionModelTest(TestCase):
 
 class DetalleOrdenTaperTest(TestCase):
     def setUp(self):
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
-        self.anadidos = Categoria.objects.create(nombre="Añadidos", orden=3, packable=False)
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        self.anadidos = Categoria.objects.create(nombre='Añadidos', orden=3, packable=False)
         self.menu = Menu.objects.create(
             categoria_entrada=self.entrada,
             categoria_segundo=self.segundo,
         )
-        self.sopa = Plato.objects.create(
-            nombre="Sopa de Res", precio=6.00, categoria=self.entrada
-        )
-        self.segundo_plato = Plato.objects.create(
-            nombre="Lomo Saltado", precio=11.00, categoria=self.segundo
-        )
-        self.huevo = Plato.objects.create(
-            nombre="Huevo", precio=1.50, categoria=self.anadidos
-        )
+        self.sopa = Plato.objects.create(nombre='Sopa de Res', precio=6.00, categoria=self.entrada)
+        self.segundo_plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.segundo)
+        self.huevo = Plato.objects.create(nombre='Huevo', precio=1.50, categoria=self.anadidos)
         self.orden = Orden.objects.create(tipo_servicio='LLEVAR')
 
     def _detail(self, plato=None, menu=None, cantidad=1):
@@ -237,82 +214,64 @@ class DetalleOrdenTaperTest(TestCase):
 
 class OrdenComputarTotalTest(TestCase):
     def setUp(self):
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
-        self.anadidos = Categoria.objects.create(nombre="Añadidos", orden=3, packable=False)
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        self.anadidos = Categoria.objects.create(nombre='Añadidos', orden=3, packable=False)
         self.menu = Menu.objects.create(
             categoria_entrada=self.entrada,
             categoria_segundo=self.segundo,
         )
-        self.sopa = Plato.objects.create(
-            nombre="Sopa de Res", precio=6.00, categoria=self.entrada
-        )
-        self.segundo_plato = Plato.objects.create(
-            nombre="Lomo Saltado", precio=11.00, categoria=self.segundo
-        )
-        self.huevo = Plato.objects.create(
-            nombre="Huevo", precio=1.50, categoria=self.anadidos
-        )
+        self.sopa = Plato.objects.create(nombre='Sopa de Res', precio=6.00, categoria=self.entrada)
+        self.segundo_plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.segundo)
+        self.huevo = Plato.objects.create(nombre='Huevo', precio=1.50, categoria=self.anadidos)
 
     def test_llevar_menu_total_includes_surcharge(self):
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal("13.00")
-        )
-        self.assertEqual(orden.computar_total(), Decimal("15.00"))
+        DetalleOrden.objects.create(orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal('13.00'))
+        self.assertEqual(orden.computar_total(), Decimal('15.00'))
 
     def test_mesa_menu_total_has_no_surcharge(self):
         orden = Orden.objects.create(tipo_servicio='MESA')
-        DetalleOrden.objects.create(
-            orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal("13.00")
-        )
-        self.assertEqual(orden.computar_total(), Decimal("13.00"))
+        DetalleOrden.objects.create(orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal('13.00'))
+        self.assertEqual(orden.computar_total(), Decimal('13.00'))
 
     def test_menu_plus_anadidos_sum_without_taper_penalty(self):
         # Scenario: "Menu + añadidos sum without taper penalty" — a LLEVAR order
         # with one Menu + one Huevo surcharges only the two menu tapers
         # (sopa + segundo); the añadido adds only its price and 0 tapers.
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal("13.00")
-        )
-        huevo_linea = DetalleOrden.objects.create(
-            orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal("1.50")
-        )
+        DetalleOrden.objects.create(orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal('13.00'))
+        huevo_linea = DetalleOrden.objects.create(orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal('1.50'))
         # huevo (Añadidos) never packs
         self.assertEqual(huevo_linea.taper_count(), 0)
         # 13.00 + 1.50 + (2 × 1.00) = 16.50
-        self.assertEqual(orden.computar_total(), Decimal("16.50"))
+        self.assertEqual(orden.computar_total(), Decimal('16.50'))
 
     def test_llevar_sopa_plus_segundo_two_tapers(self):
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
+        DetalleOrden.objects.create(orden=orden, plato=self.sopa, cantidad=1, precio_unitario=Decimal('6.00'))
         DetalleOrden.objects.create(
-            orden=orden, plato=self.sopa, cantidad=1, precio_unitario=Decimal("6.00")
-        )
-        DetalleOrden.objects.create(
-            orden=orden, plato=self.segundo_plato, cantidad=1,
-            precio_unitario=Decimal("11.00"),
+            orden=orden,
+            plato=self.segundo_plato,
+            cantidad=1,
+            precio_unitario=Decimal('11.00'),
         )
         # 6.00 + 11.00 + (2 tapers × 1.00) = 19.00
-        self.assertEqual(orden.computar_total(), Decimal("19.00"))
+        self.assertEqual(orden.computar_total(), Decimal('19.00'))
 
     def test_llevar_anadidos_add_no_surcharge(self):
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal("1.50")
-        )
-        self.assertEqual(orden.computar_total(), Decimal("1.50"))
+        DetalleOrden.objects.create(orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal('1.50'))
+        self.assertEqual(orden.computar_total(), Decimal('1.50'))
 
     def test_editable_recargo_changes_llevar_total(self):
         cfg = Configuracion.get()
-        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.recargo_por_taper = Decimal('2.00')
         cfg.save()
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal("13.00")
-        )
+        DetalleOrden.objects.create(orden=orden, menu=self.menu, cantidad=1, precio_unitario=Decimal('13.00'))
         # 13.00 + (2 tapers × 2.00) = 17.00
-        self.assertEqual(orden.computar_total(), Decimal("17.00"))
+        self.assertEqual(orden.computar_total(), Decimal('17.00'))
 
 
 class NoMenuALaCarteTaperTest(TestCase):
@@ -321,38 +280,30 @@ class NoMenuALaCarteTaperTest(TestCase):
 
     def setUp(self):
         # No Menu is created in this test at all.
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
-        self.anadidos = Categoria.objects.create(nombre="Añadidos", orden=3, packable=False)
-        self.sopa = Plato.objects.create(
-            nombre="Sopa de Res", precio=6.00, categoria=self.entrada
-        )
-        self.segundo_plato = Plato.objects.create(
-            nombre="Lomo Saltado", precio=11.00, categoria=self.segundo
-        )
-        self.huevo = Plato.objects.create(
-            nombre="Huevo", precio=1.50, categoria=self.anadidos
-        )
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        self.anadidos = Categoria.objects.create(nombre='Añadidos', orden=3, packable=False)
+        self.sopa = Plato.objects.create(nombre='Sopa de Res', precio=6.00, categoria=self.entrada)
+        self.segundo_plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.segundo)
+        self.huevo = Plato.objects.create(nombre='Huevo', precio=1.50, categoria=self.anadidos)
 
     def test_sopa_segundo_a_la_carte_still_surcharge_when_no_menu_exists(self):
         self.assertFalse(Menu.objects.exists())
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
+        DetalleOrden.objects.create(orden=orden, plato=self.sopa, cantidad=1, precio_unitario=Decimal('6.00'))
         DetalleOrden.objects.create(
-            orden=orden, plato=self.sopa, cantidad=1, precio_unitario=Decimal("6.00")
-        )
-        DetalleOrden.objects.create(
-            orden=orden, plato=self.segundo_plato, cantidad=1,
-            precio_unitario=Decimal("11.00"),
+            orden=orden,
+            plato=self.segundo_plato,
+            cantidad=1,
+            precio_unitario=Decimal('11.00'),
         )
         # 6.00 + 11.00 + (2 × 1.00) = 19.00 — surcharge survives with no Menu
-        self.assertEqual(orden.computar_total(), Decimal("19.00"))
+        self.assertEqual(orden.computar_total(), Decimal('19.00'))
 
     def test_anadido_still_zero_tapers_with_no_menu(self):
         self.assertFalse(Menu.objects.exists())
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        linea = DetalleOrden.objects.create(
-            orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal("1.50")
-        )
+        linea = DetalleOrden.objects.create(orden=orden, plato=self.huevo, cantidad=1, precio_unitario=Decimal('1.50'))
         self.assertEqual(linea.taper_count(), 0)
 
 
@@ -360,8 +311,8 @@ class DetalleOrdenValidationTest(TestCase):
     """Issue 2: a DetalleOrden must reference exactly one of plato/menu."""
 
     def setUp(self):
-        self.cat = Categoria.objects.create(nombre="Añadidos", orden=1, packable=False)
-        self.plato = Plato.objects.create(nombre="Huevo", precio=1.50, categoria=self.cat)
+        self.cat = Categoria.objects.create(nombre='Añadidos', orden=1, packable=False)
+        self.plato = Plato.objects.create(nombre='Huevo', precio=1.50, categoria=self.cat)
         self.orden = Orden.objects.create(tipo_servicio='MESA')
 
     def _linea(self, plato=None, menu=None):
@@ -370,7 +321,7 @@ class DetalleOrdenValidationTest(TestCase):
             plato=plato,
             menu=menu,
             cantidad=1,
-            precio_unitario=Decimal("1.50"),
+            precio_unitario=Decimal('1.50'),
         )
 
     def test_rejects_line_with_neither_plato_nor_menu(self):
@@ -378,7 +329,7 @@ class DetalleOrdenValidationTest(TestCase):
             self._linea().full_clean()
 
     def test_rejects_line_with_both_plato_and_menu(self):
-        entrada = Categoria.objects.create(nombre="Entrada", orden=2)  # packable default False (irrelevant to XOR validation)
+        entrada = Categoria.objects.create(nombre='Entrada', orden=2)  # packable default False (irrelevant to XOR validation)
         menu = Menu.objects.create(categoria_entrada=entrada, categoria_segundo=self.cat)
         with self.assertRaises(ValidationError):
             self._linea(plato=self.plato, menu=menu).full_clean()
@@ -396,11 +347,11 @@ class DetalleOrdenValidationTest(TestCase):
                 plato=None,
                 menu=None,
                 cantidad=1,
-                precio_unitario=Decimal("1.50"),
+                precio_unitario=Decimal('1.50'),
             )
 
     def test_db_constraint_rejects_line_with_both_plato_and_menu(self):
-        entrada = Categoria.objects.create(nombre="Entrada", orden=2, packable=True)
+        entrada = Categoria.objects.create(nombre='Entrada', orden=2, packable=True)
         menu = Menu.objects.create(categoria_entrada=entrada, categoria_segundo=self.cat)
         with self.assertRaises(IntegrityError):
             DetalleOrden.objects.create(
@@ -408,7 +359,7 @@ class DetalleOrdenValidationTest(TestCase):
                 plato=self.plato,
                 menu=menu,
                 cantidad=1,
-                precio_unitario=Decimal("1.50"),
+                precio_unitario=Decimal('1.50'),
             )
 
 
@@ -418,30 +369,26 @@ class CategoriaPackableDefaultTest(TestCase):
     "para llevar" taper surcharge. Packability is opt-in per category."""
 
     def test_packable_defaults_to_false(self):
-        cat = Categoria.objects.create(nombre="Nueva Categoría", orden=1)
+        cat = Categoria.objects.create(nombre='Nueva Categoría', orden=1)
         self.assertFalse(cat.packable)
 
     def test_non_packable_category_does_not_surcharge_on_llevar(self):
         # Category created WITHOUT packable=True (default False) must not taper.
-        no_pack = Categoria.objects.create(nombre="Extras", orden=1)
-        plato = Plato.objects.create(nombre="Extra", precio=4.00, categoria=no_pack)
+        no_pack = Categoria.objects.create(nombre='Extras', orden=1)
+        plato = Plato.objects.create(nombre='Extra', precio=4.00, categoria=no_pack)
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, plato=plato, cantidad=1, precio_unitario=Decimal("4.00")
-        )
+        DetalleOrden.objects.create(orden=orden, plato=plato, cantidad=1, precio_unitario=Decimal('4.00'))
         # 0 tapers -> total is just the price, no surcharge
-        self.assertEqual(orden.computar_total(), Decimal("4.00"))
+        self.assertEqual(orden.computar_total(), Decimal('4.00'))
 
     def test_packable_category_surcharges_on_llevar(self):
         # Category created WITH packable=True must taper on LLEVAR.
-        pack = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
-        plato = Plato.objects.create(nombre="Lomo Saltado", precio=11.00, categoria=pack)
+        pack = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=pack)
         orden = Orden.objects.create(tipo_servicio='LLEVAR')
-        DetalleOrden.objects.create(
-            orden=orden, plato=plato, cantidad=1, precio_unitario=Decimal("11.00")
-        )
+        DetalleOrden.objects.create(orden=orden, plato=plato, cantidad=1, precio_unitario=Decimal('11.00'))
         # 11.00 + (1 taper × 1.00) = 12.00
-        self.assertEqual(orden.computar_total(), Decimal("12.00"))
+        self.assertEqual(orden.computar_total(), Decimal('12.00'))
 
 
 class PoblarDatosSeedTest(TestCase):
@@ -458,8 +405,7 @@ class PoblarDatosSeedTest(TestCase):
         return {
             'categorias': sorted(Categoria.objects.values_list('nombre', 'packable', 'activo', 'orden')),
             'platos': sorted(Plato.objects.values_list('categoria__nombre', 'nombre', 'precio', 'activo')),
-            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre',
-                                                     'categoria_segundo__nombre', 'activo')),
+            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre', 'categoria_segundo__nombre', 'activo')),
             'config': Decimal(Configuracion.get().recargo_por_taper),
         }
 
@@ -470,44 +416,49 @@ class PoblarDatosSeedTest(TestCase):
         # 1 Entrada + 10 Segundos + 3 Añadidos = 14 platos
         self.assertEqual(Plato.objects.count(), 14)
 
-        entrada = Categoria.objects.get(nombre="Entrada")
-        segundo = Categoria.objects.get(nombre="Segundo")
-        anadidos = Categoria.objects.get(nombre="Añadidos")
+        entrada = Categoria.objects.get(nombre='Entrada')
+        segundo = Categoria.objects.get(nombre='Segundo')
+        anadidos = Categoria.objects.get(nombre='Añadidos')
 
         # Entrada: Sopa de Res 6.00, packable=True
-        sopa = Plato.objects.get(nombre="Sopa de Res", categoria=entrada)
-        self.assertEqual(sopa.precio, Decimal("6.00"))
+        sopa = Plato.objects.get(nombre='Sopa de Res', categoria=entrada)
+        self.assertEqual(sopa.precio, Decimal('6.00'))
         self.assertTrue(entrada.packable)
 
         # Segundos: the 10 names, all 11.00, packable=True
         segundos = list(Plato.objects.filter(categoria=segundo))
         self.assertEqual(len(segundos), 10)
-        self.assertTrue(all(p.precio == Decimal("11.00") for p in segundos))
+        self.assertTrue(all(p.precio == Decimal('11.00') for p in segundos))
         self.assertTrue(segundo.packable)
         self.assertEqual(
             {p.nombre for p in segundos},
-            {"Lomo Saltado", "Pollo Dorado", "Hamburguesa al Plato", "Chuleta de Res",
-             "Saltado de Mollejas", "Hígado Frito", "Pollo Broaster", "Riñón Saltado",
-             "Chuleta de Chancho", "Arroz a la Cubana"},
+            {
+                'Lomo Saltado',
+                'Pollo Dorado',
+                'Hamburguesa al Plato',
+                'Chuleta de Res',
+                'Saltado de Mollejas',
+                'Hígado Frito',
+                'Pollo Broaster',
+                'Riñón Saltado',
+                'Chuleta de Chancho',
+                'Arroz a la Cubana',
+            },
         )
 
         # Añadidos: Huevo 1.50, Porción de Arroz 3.00, Porción de Papa 3.00, packable=False
         self.assertFalse(anadidos.packable)
-        self.assertEqual(Plato.objects.get(nombre="Huevo", categoria=anadidos).precio, Decimal("1.50"))
-        self.assertEqual(
-            Plato.objects.get(nombre="Porción de Arroz", categoria=anadidos).precio, Decimal("3.00")
-        )
-        self.assertEqual(
-            Plato.objects.get(nombre="Porción de Papa", categoria=anadidos).precio, Decimal("3.00")
-        )
+        self.assertEqual(Plato.objects.get(nombre='Huevo', categoria=anadidos).precio, Decimal('1.50'))
+        self.assertEqual(Plato.objects.get(nombre='Porción de Arroz', categoria=anadidos).precio, Decimal('3.00'))
+        self.assertEqual(Plato.objects.get(nombre='Porción de Papa', categoria=anadidos).precio, Decimal('3.00'))
 
     def test_seed_creates_menu_with_price_and_category_refs(self):
         self._run()
-        menu = Menu.objects.get(nombre="Menú")
-        self.assertEqual(menu.precio, Decimal("13.00"))
+        menu = Menu.objects.get(nombre='Menú')
+        self.assertEqual(menu.precio, Decimal('13.00'))
         self.assertTrue(menu.activo)
-        self.assertEqual(menu.categoria_entrada, Categoria.objects.get(nombre="Entrada"))
-        self.assertEqual(menu.categoria_segundo, Categoria.objects.get(nombre="Segundo"))
+        self.assertEqual(menu.categoria_entrada, Categoria.objects.get(nombre='Entrada'))
+        self.assertEqual(menu.categoria_segundo, Categoria.objects.get(nombre='Segundo'))
 
     def test_seed_is_deterministic_and_idempotent(self):
         # Run twice from empty DB: identical state, no duplicate rows.
@@ -529,17 +480,17 @@ class PoblarDatosSeedTest(TestCase):
         self.assertEqual(len(platos), 14)
         for plato in platos:
             self.assertTrue(plato.imagen_base64)
-            self.assertTrue(plato.imagen_base64.startswith("data:image/"))
+            self.assertTrue(plato.imagen_base64.startswith('data:image/'))
 
     def test_seed_does_not_overwrite_existing_plato_image(self):
         # Images are filled only when empty; an admin-assigned image must be kept.
         self._run()
-        plato = Plato.objects.get(nombre="Lomo Saltado")
-        plato.imagen_base64 = "data:image/jpeg;base64,KEEP"
+        plato = Plato.objects.get(nombre='Lomo Saltado')
+        plato.imagen_base64 = 'data:image/jpeg;base64,KEEP'
         plato.save()
         self._run()
         plato.refresh_from_db()
-        self.assertEqual(plato.imagen_base64, "data:image/jpeg;base64,KEEP")
+        self.assertEqual(plato.imagen_base64, 'data:image/jpeg;base64,KEEP')
 
 
 class PoblarDatosResetTest(TestCase):
@@ -553,20 +504,17 @@ class PoblarDatosResetTest(TestCase):
         return {
             'categorias': sorted(Categoria.objects.values_list('nombre', 'packable', 'activo', 'orden')),
             'platos': sorted(Plato.objects.values_list('categoria__nombre', 'nombre', 'precio', 'activo')),
-            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre',
-                                                     'categoria_segundo__nombre', 'activo')),
+            'menus': sorted(Menu.objects.values_list('nombre', 'precio', 'categoria_entrada__nombre', 'categoria_segundo__nombre', 'activo')),
             'config': Decimal(Configuracion.get().recargo_por_taper),
         }
 
     def test_reset_clears_then_reseeds_and_deactivates_stale(self):
         # Pre-existing stale catalog referencing a PROTECTed order row.
-        stale_cat = Categoria.objects.create(nombre="Bebidas", orden=1, activo=True)
-        stale_plato = Plato.objects.create(nombre="Inca Kola 1.5L", precio=9.00, categoria=stale_cat)
+        stale_cat = Categoria.objects.create(nombre='Bebidas', orden=1, activo=True)
+        stale_plato = Plato.objects.create(nombre='Inca Kola 1.5L', precio=9.00, categoria=stale_cat)
         orden = Orden.objects.create(tipo_servicio='MESA')
         # PROTECT on DetalleOrden.plato → seed must NOT hard-delete stale_plato.
-        DetalleOrden.objects.create(
-            orden=orden, plato=stale_plato, cantidad=1, precio_unitario=Decimal("9.00")
-        )
+        DetalleOrden.objects.create(orden=orden, plato=stale_plato, cantidad=1, precio_unitario=Decimal('9.00'))
 
         # Must not raise ProtectedError.
         self._run(reset=True)
@@ -580,19 +528,19 @@ class PoblarDatosResetTest(TestCase):
 
         # Target catalog seeded; exactly the 3 seed categorías are active.
         self.assertEqual(Categoria.objects.filter(activo=True).count(), 3)
-        self.assertFalse(Categoria.objects.get(nombre="Bebidas").activo)
-        self.assertTrue(Categoria.objects.get(nombre="Entrada").activo)
-        self.assertTrue(Plato.objects.get(nombre="Lomo Saltado").activo)
+        self.assertFalse(Categoria.objects.get(nombre='Bebidas').activo)
+        self.assertTrue(Categoria.objects.get(nombre='Entrada').activo)
+        self.assertTrue(Plato.objects.get(nombre='Lomo Saltado').activo)
 
     def test_reset_reconciles_packable_flags(self):
         # Older rows may carry wrong packable (legacy default True); reset fixes them.
-        Categoria.objects.create(nombre="Entrada", orden=1, packable=False, activo=True)
-        Categoria.objects.create(nombre="Segundo", orden=2, packable=False, activo=True)
-        Categoria.objects.create(nombre="Añadidos", orden=3, packable=True, activo=True)
+        Categoria.objects.create(nombre='Entrada', orden=1, packable=False, activo=True)
+        Categoria.objects.create(nombre='Segundo', orden=2, packable=False, activo=True)
+        Categoria.objects.create(nombre='Añadidos', orden=3, packable=True, activo=True)
         self._run(reset=True)
-        self.assertTrue(Categoria.objects.get(nombre="Entrada").packable)
-        self.assertTrue(Categoria.objects.get(nombre="Segundo").packable)
-        self.assertFalse(Categoria.objects.get(nombre="Añadidos").packable)
+        self.assertTrue(Categoria.objects.get(nombre='Entrada').packable)
+        self.assertTrue(Categoria.objects.get(nombre='Segundo').packable)
+        self.assertFalse(Categoria.objects.get(nombre='Añadidos').packable)
 
     def test_reset_is_idempotent_no_duplicates(self):
         self._run(reset=True)
@@ -608,18 +556,18 @@ class PoblarDatosResetTest(TestCase):
         # Legacy row created by the OLD seed: same seed name but categoria=None.
         # It must be REUSED (re-parented to Segundo), NOT duplicated. D5 requires
         # re-parenting demo rows with real names instead of creating a second row.
-        Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
-        Categoria.objects.create(nombre="Añadidos", orden=3, packable=False)
-        Plato.objects.create(nombre="Lomo Saltado", precio=8.00, categoria=None)
+        Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        Categoria.objects.create(nombre='Añadidos', orden=3, packable=False)
+        Plato.objects.create(nombre='Lomo Saltado', precio=8.00, categoria=None)
 
         self._run(reset=True)
 
-        platos = Plato.objects.filter(nombre="Lomo Saltado")
+        platos = Plato.objects.filter(nombre='Lomo Saltado')
         self.assertEqual(platos.count(), 1)
         plato = platos.first()
-        self.assertEqual(plato.categoria, Categoria.objects.get(nombre="Segundo"))
-        self.assertEqual(plato.precio, Decimal("11.00"))
+        self.assertEqual(plato.categoria, Categoria.objects.get(nombre='Segundo'))
+        self.assertEqual(plato.precio, Decimal('11.00'))
         self.assertTrue(plato.activo)
 
     def test_plain_seed_does_not_clobber_admin_edited_pricing(self):
@@ -627,39 +575,37 @@ class PoblarDatosResetTest(TestCase):
         # admin-edited Menu.precio, Configuracion.recargo_por_taper, or
         # existing Plato.precio (catalogo.md: all admin-editable).
         self._run()
-        menu = Menu.objects.get(nombre="Menú")
-        menu.precio = Decimal("15.00")
+        menu = Menu.objects.get(nombre='Menú')
+        menu.precio = Decimal('15.00')
         menu.save()
         cfg = Configuracion.get()
-        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.recargo_por_taper = Decimal('2.00')
         cfg.save()
-        plato = Plato.objects.get(nombre="Lomo Saltado")
-        plato.precio = Decimal("9.50")
+        plato = Plato.objects.get(nombre='Lomo Saltado')
+        plato.precio = Decimal('9.50')
         plato.save()
 
         self._run()
 
-        self.assertEqual(Menu.objects.get(nombre="Menú").precio, Decimal("15.00"))
-        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("2.00"))
-        self.assertEqual(
-            Plato.objects.get(nombre="Lomo Saltado").precio, Decimal("9.50")
-        )
+        self.assertEqual(Menu.objects.get(nombre='Menú').precio, Decimal('15.00'))
+        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal('2.00'))
+        self.assertEqual(Plato.objects.get(nombre='Lomo Saltado').precio, Decimal('9.50'))
 
     def test_reset_restores_canonical_pricing(self):
         # --reset force-overwrites the canonical price/surcharge values
         # (Menu 13.00, recargo 1.00) regardless of admin edits.
         self._run(reset=True)
-        menu = Menu.objects.get(nombre="Menú")
-        menu.precio = Decimal("15.00")
+        menu = Menu.objects.get(nombre='Menú')
+        menu.precio = Decimal('15.00')
         menu.save()
         cfg = Configuracion.get()
-        cfg.recargo_por_taper = Decimal("2.00")
+        cfg.recargo_por_taper = Decimal('2.00')
         cfg.save()
 
         self._run(reset=True)
 
-        self.assertEqual(Menu.objects.get(nombre="Menú").precio, Decimal("13.00"))
-        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal("1.00"))
+        self.assertEqual(Menu.objects.get(nombre='Menú').precio, Decimal('13.00'))
+        self.assertEqual(Configuracion.get().recargo_por_taper, Decimal('1.00'))
 
 
 class PosViewTotalTest(TestCase):
@@ -672,8 +618,8 @@ class PosViewTotalTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='mozo', password='password123')
         self.client.login(username='mozo', password='password123')
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
         # precio default 13.00
         self.menu = Menu.objects.create(
             categoria_entrada=self.entrada,
@@ -681,15 +627,15 @@ class PosViewTotalTest(TestCase):
         )
 
     def _post_orden(self, tipo_servicio):
-        items = json.dumps([
-            {'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': '',
-             'es_para_llevar': (tipo_servicio == 'LLEVAR')}
-        ])
-        return self.client.post(reverse('pos'), {
-            'items_json': items,
-            'tipo_servicio': tipo_servicio,
-            'nota_general': '',
-        })
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': '', 'es_para_llevar': (tipo_servicio == 'LLEVAR')}])
+        return self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': tipo_servicio,
+                'nota_general': '',
+            },
+        )
 
     def test_llevar_menu_line_total_includes_surcharge(self):
         response = self._post_orden('LLEVAR')
@@ -699,39 +645,38 @@ class PosViewTotalTest(TestCase):
         # menu line prices as a unit (not the sum of sopa + segundo)
         self.assertEqual(detalle.menu, self.menu)
         self.assertIsNone(detalle.plato)
-        self.assertEqual(detalle.precio_unitario, Decimal("13.00"))
+        self.assertEqual(detalle.precio_unitario, Decimal('13.00'))
         # 13.00 + (2 tapers × 1.00) = 15.00
-        self.assertEqual(orden.total, Decimal("15.00"))
+        self.assertEqual(orden.total, Decimal('15.00'))
 
     def test_mesa_menu_line_total_has_no_surcharge(self):
         response = self._post_orden('MESA')
         self.assertEqual(response.status_code, 302)
         orden = Orden.objects.get()
         # 13.00 fixed menu price, no taper surcharge on MESA
-        self.assertEqual(orden.total, Decimal("13.00"))
+        self.assertEqual(orden.total, Decimal('13.00'))
 
     def test_llevar_plato_line_flow_through_computar_total(self):
         # Backward-compatible plato path (no 'tipo' key → defaults to plato):
         # a packable plato line must also be priced via computar_total, so a
         # LLEVAR a-la-carte second incurs its 1-taper surcharge.
-        plato = Plato.objects.create(
-            nombre="Lomo Saltado", precio=Decimal("11.00"), categoria=self.segundo
+        plato = Plato.objects.create(nombre='Lomo Saltado', precio=Decimal('11.00'), categoria=self.segundo)
+        items = json.dumps([{'id': plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': True}])
+        response = self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'LLEVAR',
+                'nota_general': '',
+            },
         )
-        items = json.dumps([
-            {'id': plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': True}
-        ])
-        response = self.client.post(reverse('pos'), {
-            'items_json': items,
-            'tipo_servicio': 'LLEVAR',
-            'nota_general': '',
-        })
         self.assertEqual(response.status_code, 302)
         orden = Orden.objects.get()
         detalle = orden.detalles.get()
         self.assertEqual(detalle.plato, plato)
         self.assertIsNone(detalle.menu)
         # 11.00 + (1 taper × 1.00) = 12.00
-        self.assertEqual(orden.total, Decimal("12.00"))
+        self.assertEqual(orden.total, Decimal('12.00'))
 
 
 class Pr3MenuComboFixesTest(TestCase):
@@ -747,25 +692,26 @@ class Pr3MenuComboFixesTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='mozo', password='password123')
         self.client.login(username='mozo', password='password123')
-        self.entrada = Categoria.objects.create(nombre="Entrada", orden=1, packable=True)
-        self.segundo = Categoria.objects.create(nombre="Segundo", orden=2, packable=True)
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
         # Unique name (not the default "Menú") so template assertions target the
         # order-detail line and not the sidebar navigation "Menú" label.
         self.menu = Menu.objects.create(
-            nombre="Menú Sellado Único",
+            nombre='Menú Sellado Único',
             categoria_entrada=self.entrada,
             categoria_segundo=self.segundo,
         )
 
     def _post_menu_order(self):
-        items = json.dumps([
-            {'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}
-        ])
-        return self.client.post(reverse('pos'), {
-            'items_json': items,
-            'tipo_servicio': 'MESA',
-            'nota_general': '',
-        })
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}])
+        return self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'MESA',
+                'nota_general': '',
+            },
+        )
 
     # --- Issue 1: kitchen endpoints and Menu lines ---
     def test_api_cocina_ordenes_returns_menu_name_for_menu_line(self):
@@ -788,13 +734,16 @@ class Pr3MenuComboFixesTest(TestCase):
     def test_api_cocina_ordenes_returns_plato_name_for_plato_line(self):
         # Triangulation: the fallback must pick the plato name when a plato line
         # is present (never blindly the menu).
-        plato = Plato.objects.create(
-            nombre="Lomo Saltado", precio=11.00, categoria=self.segundo
-        )
+        plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.segundo)
         items = json.dumps([{'id': plato.id, 'cantidad': 1, 'nota': ''}])
-        self.client.post(reverse('pos'), {
-            'items_json': items, 'tipo_servicio': 'MESA', 'nota_general': '',
-        })
+        self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'MESA',
+                'nota_general': '',
+            },
+        )
         response = self.client.get(reverse('api_cocina_ordenes'))
         self.assertEqual(response.status_code, 200)
         detalle = response.json()['ordenes'][0]['detalles'][0]
@@ -805,29 +754,41 @@ class Pr3MenuComboFixesTest(TestCase):
         self.menu.activo = False
         self.menu.save()
         items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1}])
-        response = self.client.post(reverse('pos'), {
-            'items_json': items, 'tipo_servicio': 'MESA',
-        })
+        response = self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'MESA',
+            },
+        )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Orden.objects.count(), 0)
 
     def test_post_inactive_plato_returns_404(self):
-        plato = Plato.objects.create(nombre="Huevo", precio=1.50)
+        plato = Plato.objects.create(nombre='Huevo', precio=1.50)
         plato.activo = False
         plato.save()
         items = json.dumps([{'id': plato.id, 'cantidad': 1}])
-        response = self.client.post(reverse('pos'), {
-            'items_json': items, 'tipo_servicio': 'MESA',
-        })
+        response = self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'MESA',
+            },
+        )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Orden.objects.count(), 0)
 
     # --- Issue 3: malformed payload must not persist an orphan Orden ---
     def test_post_invalid_item_id_creates_no_orden(self):
         items = json.dumps([{'id': 999999, 'tipo': 'menu', 'cantidad': 1}])
-        response = self.client.post(reverse('pos'), {
-            'items_json': items, 'tipo_servicio': 'MESA',
-        })
+        response = self.client.post(
+            reverse('pos'),
+            {
+                'items_json': items,
+                'tipo_servicio': 'MESA',
+            },
+        )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Orden.objects.count(), 0)
 
@@ -835,9 +796,13 @@ class Pr3MenuComboFixesTest(TestCase):
         # int('abc') raises ValueError BEFORE any Orden row may be persisted.
         items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 'abc'}])
         with self.assertRaises(ValueError):
-            self.client.post(reverse('pos'), {
-                'items_json': items, 'tipo_servicio': 'MESA',
-            })
+            self.client.post(
+                reverse('pos'),
+                {
+                    'items_json': items,
+                    'tipo_servicio': 'MESA',
+                },
+            )
         self.assertEqual(Orden.objects.count(), 0)
 
 
@@ -856,8 +821,8 @@ class AdminRegistrationTest(TestCase):
         self.assertTrue(dj_admin.site.is_registered(Configuracion))
 
     def test_menu_add_page_renders_editable_fields(self):
-        entrada = Categoria.objects.create(nombre="Entrada", orden=1)
-        segundo = Categoria.objects.create(nombre="Segundo", orden=2)
+        entrada = Categoria.objects.create(nombre='Entrada', orden=1)
+        segundo = Categoria.objects.create(nombre='Segundo', orden=2)
         Menu.objects.create(categoria_entrada=entrada, categoria_segundo=segundo)
         response = self.client.get(reverse('admin:restaurante_menu_add'))
         self.assertEqual(response.status_code, 200)
@@ -868,7 +833,7 @@ class AdminRegistrationTest(TestCase):
 
     def test_configuracion_not_addable_but_editable(self):
         cfg = Configuracion.get()
-        self.assertEqual(cfg.recargo_por_taper, Decimal("1.00"))
+        self.assertEqual(cfg.recargo_por_taper, Decimal('1.00'))
         # singleton: adding a second config row is forbidden
         add_response = self.client.get(reverse('admin:restaurante_configuracion_add'))
         self.assertEqual(add_response.status_code, 403)
@@ -877,7 +842,7 @@ class AdminRegistrationTest(TestCase):
         change_response = self.client.post(change_url, {'recargo_por_taper': '2.50'})
         self.assertEqual(change_response.status_code, 302)
         cfg.refresh_from_db()
-        self.assertEqual(cfg.recargo_por_taper, Decimal("2.50"))
+        self.assertEqual(cfg.recargo_por_taper, Decimal('2.50'))
 
 
 class AmbienteAndMesaTest(TestCase):
@@ -887,26 +852,14 @@ class AmbienteAndMesaTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='mesero', password='password123')
         self.client.login(username='mesero', password='password123')
-        self.ambiente = Ambiente.objects.create(nombre="Salón Principal", orden=1)
-        self.mesa = Mesa.objects.create(ambiente=self.ambiente, numero="Mesa 1", capacidad=4)
-        self.cat = Categoria.objects.create(nombre="Segundo", orden=1, packable=True)
-        self.plato = Plato.objects.create(nombre="Lomo Saltado", precio=11.00, categoria=self.cat)
+        self.ambiente = Ambiente.objects.create(nombre='Salón Principal', orden=1)
+        self.mesa = Mesa.objects.create(ambiente=self.ambiente, numero='Mesa 1', capacidad=4)
+        self.cat = Categoria.objects.create(nombre='Segundo', orden=1, packable=True)
+        self.plato = Plato.objects.create(nombre='Lomo Saltado', precio=11.00, categoria=self.cat)
 
     def test_crear_orden_con_mesa_cambia_estado_a_ocupada(self):
-        items_json = json.dumps([{
-            'id': self.plato.id,
-            'tipo': 'plato',
-            'cantidad': 1,
-            'precio': 11.00,
-            'es_para_llevar': False,
-            'nota': ''
-        }])
-        response = self.client.post(reverse('pos'), {
-            'tipo_servicio': 'MESA',
-            'mesa_id': str(self.mesa.id),
-            'items_json': items_json,
-            'nota_general': 'Mesa 1'
-        })
+        items_json = json.dumps([{'id': self.plato.id, 'tipo': 'plato', 'cantidad': 1, 'precio': 11.00, 'es_para_llevar': False, 'nota': ''}])
+        response = self.client.post(reverse('pos'), {'tipo_servicio': 'MESA', 'mesa_id': str(self.mesa.id), 'items_json': items_json, 'nota_general': 'Mesa 1'})
         self.assertEqual(response.status_code, 302)
         self.mesa.refresh_from_db()
         self.assertEqual(self.mesa.estado, 'OCUPADA')
@@ -924,19 +877,8 @@ class AmbienteAndMesaTest(TestCase):
         self.assertEqual(self.mesa.estado, 'DISPONIBLE')
 
     def test_orden_para_llevar_no_requiere_mesa(self):
-        items_json = json.dumps([{
-            'id': self.plato.id,
-            'tipo': 'plato',
-            'cantidad': 1,
-            'precio': 11.00,
-            'es_para_llevar': True,
-            'nota': ''
-        }])
-        response = self.client.post(reverse('pos'), {
-            'tipo_servicio': 'LLEVAR',
-            'items_json': items_json,
-            'nota_general': 'Para Llevar'
-        })
+        items_json = json.dumps([{'id': self.plato.id, 'tipo': 'plato', 'cantidad': 1, 'precio': 11.00, 'es_para_llevar': True, 'nota': ''}])
+        response = self.client.post(reverse('pos'), {'tipo_servicio': 'LLEVAR', 'items_json': items_json, 'nota_general': 'Para Llevar'})
         self.assertEqual(response.status_code, 302)
         orden = Orden.objects.first()
         self.assertIsNone(orden.mesa)
@@ -946,11 +888,7 @@ class AmbienteAndMesaTest(TestCase):
         User.objects.create_superuser(username='admin_pos', password='password123')
         self.client.login(username='admin_pos', password='password123')
         payload = {'mesas': [{'id': self.mesa.id, 'x': 150, 'y': 220}]}
-        response = self.client.post(
-            reverse('api_guardar_posiciones_mesas'),
-            data=json.dumps(payload),
-            content_type='application/json'
-        )
+        response = self.client.post(reverse('api_guardar_posiciones_mesas'), data=json.dumps(payload), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.mesa.refresh_from_db()
         self.assertEqual(self.mesa.posicion_x, 150)

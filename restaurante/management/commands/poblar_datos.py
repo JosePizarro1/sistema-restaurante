@@ -19,7 +19,7 @@ SEED_AMBIENTES = [
             {'numero': 'Mesa 4', 'capacidad': 6, 'posicion_x': 30, 'posicion_y': 150, 'forma': 'RECTANGULO'},
             {'numero': 'Mesa 5', 'capacidad': 6, 'posicion_x': 180, 'posicion_y': 150, 'forma': 'RECTANGULO'},
             {'numero': 'Mesa 6', 'capacidad': 2, 'posicion_x': 330, 'posicion_y': 150, 'forma': 'CIRCULO'},
-        ]
+        ],
     },
     {
         'nombre': 'Terraza',
@@ -29,7 +29,7 @@ SEED_AMBIENTES = [
             {'numero': 'Mesa 8', 'capacidad': 4, 'posicion_x': 200, 'posicion_y': 40, 'forma': 'CIRCULO'},
             {'numero': 'Mesa 9', 'capacidad': 2, 'posicion_x': 40, 'posicion_y': 160, 'forma': 'CUADRADO'},
             {'numero': 'Mesa 10', 'capacidad': 8, 'posicion_x': 200, 'posicion_y': 160, 'forma': 'RECTANGULO'},
-        ]
+        ],
     },
 ]
 
@@ -106,8 +106,8 @@ def generar_imagen_demo(nombre, color_bg, color_accent):
 
     # Texto
     try:
-        font_title = ImageFont.truetype("arial.ttf", 26)
-        font_sub = ImageFont.truetype("arial.ttf", 14)
+        font_title = ImageFont.truetype('arial.ttf', 26)
+        font_sub = ImageFont.truetype('arial.ttf', 14)
     except OSError:
         font_title = ImageFont.load_default()
         font_sub = ImageFont.load_default()
@@ -117,7 +117,7 @@ def generar_imagen_demo(nombre, color_bg, color_accent):
     w = text_bbox[2] - text_bbox[0]
     draw.text(((400 - w) / 2, 215), nombre, fill=(255, 255, 255), font=font_title)
 
-    sub_text = "Especialidad de la Casa"
+    sub_text = 'Especialidad de la Casa'
     sub_bbox = draw.textbbox((0, 0), sub_text, font=font_sub)
     sw = sub_bbox[2] - sub_bbox[0]
     draw.text(((400 - sw) / 2, 250), sub_text, fill=(220, 220, 220), font=font_sub)
@@ -126,7 +126,7 @@ def generar_imagen_demo(nombre, color_bg, color_accent):
     img.save(buffer, format='JPEG', quality=75, optimize=True)
     buffer.seek(0)
     encoded = base64.b64encode(buffer.read()).decode('utf-8')
-    return f"data:image/jpeg;base64,{encoded}"
+    return f'data:image/jpeg;base64,{encoded}'
 
 
 class Command(BaseCommand):
@@ -154,10 +154,7 @@ class Command(BaseCommand):
             Ambiente.objects.update(activo=False)
             Mesa.objects.update(activo=False)
         for amb_data in SEED_AMBIENTES:
-            amb, _ = Ambiente.objects.get_or_create(
-                nombre=amb_data['nombre'],
-                defaults={'orden': amb_data['orden']}
-            )
+            amb, _ = Ambiente.objects.get_or_create(nombre=amb_data['nombre'], defaults={'orden': amb_data['orden']})
             amb.orden = amb_data['orden']
             amb.activo = True
             amb.save()
@@ -171,7 +168,7 @@ class Command(BaseCommand):
                         'posicion_x': m_data.get('posicion_x', 20),
                         'posicion_y': m_data.get('posicion_y', 20),
                         'forma': m_data.get('forma', 'RECTANGULO'),
-                    }
+                    },
                 )
                 mesa.capacidad = m_data['capacidad']
                 if reset or mesa.posicion_x == 20:
@@ -202,7 +199,7 @@ class Command(BaseCommand):
             cat.packable = data['packable']
             cat.activo = True
             cat.save()
-            self.stdout.write(self.style.SUCCESS(f"Categoría lista: {cat.nombre}"))
+            self.stdout.write(self.style.SUCCESS(f'Categoría lista: {cat.nombre}'))
 
     def _reconcile_platos(self, reset):
         if reset:
@@ -256,8 +253,4 @@ class Command(BaseCommand):
         if reset:
             cfg.recargo_por_taper = RECARGO_POR_TAPER
             cfg.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Configuración lista: recargo por taper {cfg.recargo_por_taper}'
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f'Configuración lista: recargo por taper {cfg.recargo_por_taper}'))
