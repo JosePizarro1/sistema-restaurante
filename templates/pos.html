@@ -540,6 +540,34 @@
 {% block scripts %}
 <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
 <script>
+    function imprimirTicket(containerId) {
+        const elem = document.getElementById(containerId);
+        if (!elem) return;
+        const win = window.open('', '_blank', 'width=400,height=600');
+        win.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Imprimir Ticket</title>
+                <style>
+                    body { font-family: monospace; font-size: 12px; margin: 10px; padding: 0; }
+                    .text-center { text-align: center; }
+                    .border-b { border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 8px; }
+                    .border-t { border-top: 1px dashed #ccc; padding-top: 8px; margin-top: 8px; }
+                    .flex { display: flex; justify-content: space-between; }
+                    .font-bold { font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                ${elem.innerHTML}
+            </body>
+            </html>
+        `);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.close();
+    }
     let carrito = [];
     let tipoServicioActual = 'MESA';
     let notaGeneralActual = '';
