@@ -1,5 +1,6 @@
 import json
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib import admin as dj_admin
 from django.contrib.auth.models import User
@@ -916,6 +917,165 @@ class AdminRegistrationTest(TestCase):
         self.assertEqual(change_response.status_code, 302)
         cfg.refresh_from_db()
         self.assertEqual(cfg.modo_envio, 'PRINT')
+
+
+class PosViewAjaxTest(TestCase):
+    """POS-PRINT-1/2: an AJAX POST (X-Requested-With header) must create the
+    order through the existing path, fire Pusher 'nueva-orden' at the same
+    point, and return ticket JSON. Non-AJAX POSTs keep the redirect behavior."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mozo', password='password123')
+        self.client.login(username='mozo', password='password123')
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        self.entrada = Categoria.objects.create(nombre='Entrada', orden=1, packable=True)
+        self.segundo = Categoria.objects.create(nombre='Segundo', orden=2, packable=True)
+        # precio default 13.00
+        self.menu = Menu.objects.create(
+            categoria_entrada=self.entrada,
+            categoria_segundo=self.segundo,
+        )
+        self.plato = Plato.objects.create(nombre='Lomo Saltado', precio=Decimal('11.00'), categoria=self.segundo)
+
+    def _ajax_post(self, data):
+        return self.client.post(reverse('pos'), data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+
+    def test_ajax_valid_cart_returns_json_creates_order_and_fires_pusher(self):
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': 'sin cebolla', 'es_para_llevar': True}])
+        with patch('restaurante.views.trigger_pusher_event') as mock_pusher:
+            response = self._ajax_post({'items_json': items, 'tipo_servicio': 'LLEVAR', 'nota_general': 'Pedido urgente'})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        data = response.json()
+        self.assertEqual(data['status'], 'ok')
+        ticket = data['ticket']
+        orden = Orden.objects.get()
+        self.assertEqual(ticket['orden_id'], orden.id)
+        self.assertRegex(ticket['hora_str'], r'^\d{2}:\d{2}$')
+        self.assertEqual(ticket['tipo_servicio'], 'LLEVAR')
+        self.assertEqual(ticket['mesa_label'], 'PARA LLEVAR')
+        self.assertEqual(ticket['nota_general'], 'Pedido urgente')
+        self.assertEqual(ticket['total'], '15.00')
+        self.assertEqual(len(ticket['detalles']), 1)
+        detalle = ticket['detalles'][0]
+        self.assertEqual(detalle['nombre'], self.menu.nombre)
+        self.assertEqual(detalle['cantidad'], 1)
+        self.assertEqual(detalle['nota'], 'sin cebolla')
+        self.assertTrue(detalle['es_menu'])
+        mock_pusher.assert_called_once_with('nueva-orden', {'orden_id': orden.id})
+
+    def test_llevar_menu_line_shows_both_taper_badges_and_flags(self):
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'LLEVAR', 'nota_general': ''})
+        detalle = response.json()['ticket']['detalles'][0]
+        self.assertEqual(detalle['badges'], ['Entrada Táper', 'Segundo Táper'])
+        self.assertTrue(detalle['es_menu'])
+        self.assertTrue(detalle['entrada_para_llevar'])
+        self.assertTrue(detalle['segundo_para_llevar'])
+        self.assertTrue(detalle['es_para_llevar'])
+
+    def test_menu_line_one_component_tapered_shows_only_that_badge(self):
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': '', 'entrada_para_llevar': True, 'segundo_para_llevar': False}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'MESA', 'nota_general': ''})
+        detalle = response.json()['ticket']['detalles'][0]
+        self.assertEqual(detalle['badges'], ['Entrada Táper'])
+        self.assertTrue(detalle['entrada_para_llevar'])
+        self.assertFalse(detalle['segundo_para_llevar'])
+
+    def test_llevar_packable_plato_line_shows_taper_badge(self):
+        items = json.dumps([{'id': self.plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': True}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'LLEVAR', 'nota_general': ''})
+        detalle = response.json()['ticket']['detalles'][0]
+        self.assertEqual(detalle['nombre'], self.plato.nombre)
+        self.assertEqual(detalle['badges'], ['TÁPER'])
+        self.assertFalse(detalle['es_menu'])
+        self.assertTrue(detalle['es_para_llevar'])
+        self.assertEqual(response.json()['ticket']['total'], '12.00')
+
+    def test_mesa_order_label_and_no_badges(self):
+        ambiente = Ambiente.objects.create(nombre='Salón', orden=1)
+        mesa = Mesa.objects.create(ambiente=ambiente, numero='Mesa 3', capacidad=4)
+        items = json.dumps([{'id': self.plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': False}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'MESA', 'mesa_id': str(mesa.id), 'nota_general': ''})
+        ticket = response.json()['ticket']
+        self.assertEqual(ticket['tipo_servicio'], 'MESA')
+        self.assertEqual(ticket['mesa_label'], 'Mesa 3')
+        self.assertEqual(ticket['detalles'][0]['badges'], [])
+        self.assertEqual(ticket['total'], '11.00')
+
+    def test_mesa_with_plain_number_gets_prefixed_label(self):
+        ambiente = Ambiente.objects.create(nombre='Salón', orden=1)
+        mesa = Mesa.objects.create(ambiente=ambiente, numero='5', capacidad=4)
+        items = json.dumps([{'id': self.plato.id, 'cantidad': 1, 'nota': '', 'es_para_llevar': False}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'MESA', 'mesa_id': str(mesa.id), 'nota_general': ''})
+        self.assertEqual(response.json()['ticket']['mesa_label'], 'Mesa 5')
+
+    def test_server_total_includes_non_default_taper_surcharge(self):
+        cfg = Configuracion.get()
+        cfg.recargo_por_taper = Decimal('2.00')
+        cfg.save()
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'LLEVAR', 'nota_general': ''})
+        ticket = response.json()['ticket']
+        # 13.00 + (2 tapers × 2.00) = 17.00 — matches Orden.computar_total()
+        self.assertEqual(ticket['total'], '17.00')
+        self.assertEqual(str(Orden.objects.get().total), '17.00')
+
+    def test_plain_post_in_print_mode_still_redirects(self):
+        items = json.dumps([{'id': self.menu.id, 'tipo': 'menu', 'cantidad': 1, 'nota': ''}])
+        response = self.client.post(
+            reverse('pos'),
+            {'items_json': items, 'tipo_servicio': 'MESA', 'nota_general': ''},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(response.get('Content-Type', '').startswith('application/json'))
+        self.assertEqual(Orden.objects.count(), 1)
+
+    def test_ajax_empty_cart_creates_no_order(self):
+        response = self._ajax_post({'items_json': '[]', 'tipo_servicio': 'LLEVAR', 'nota_general': ''})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Orden.objects.count(), 0)
+
+    def test_ajax_invalid_item_creates_no_order(self):
+        items = json.dumps([{'id': 999999, 'tipo': 'menu', 'cantidad': 1}])
+        response = self._ajax_post({'items_json': items, 'tipo_servicio': 'MESA'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Orden.objects.count(), 0)
+
+
+class PosTemplatePrintWiringTest(TestCase):
+    """Template-level wiring for the PRINT JS module (POS-PRINT-3/4/5) and the
+    minimal PWA manifest (POS-PRINT-3 secure-context requirement). No JS test
+    runner exists, so the next available layer is rendered-HTML assertions."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='mozo', password='password123')
+        self.client.login(username='mozo', password='password123')
+
+    def test_pos_renders_modo_envio_const(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        response = self.client.get(reverse('pos'))
+        self.assertContains(response, "const MODO_ENVIO = 'PRINT';")
+
+    def test_pos_renders_print_module_functions(self):
+        response = self.client.get(reverse('pos'))
+        for fn in ('sanitizeText', 'wrap80', 'fetchTicketData', 'buildEscPos', 'connectPrinting', 'enviarOrdenPrint'):
+            self.assertContains(response, f'function {fn}')
+
+    def test_pos_renders_print_gate_in_send_handlers(self):
+        response = self.client.get(reverse('pos'))
+        self.assertContains(response, "MODO_ENVIO === 'PRINT'")
+
+    def test_base_renders_manifest_link(self):
+        response = self.client.get(reverse('pos'))
+        self.assertContains(response, 'rel="manifest"')
+        self.assertContains(response, 'manifest.webmanifest')
 
 
 class AmbienteAndMesaTest(TestCase):

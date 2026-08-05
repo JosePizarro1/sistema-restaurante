@@ -13,6 +13,8 @@
     <!-- Favicon & Touch Icons -->
     <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.svg' %}">
+    <!-- Minimal PWA manifest (Web Bluetooth requiere un contexto seguro: HTTPS) -->
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
 
     <title>{% block title %}RestoPOS - Sistema de Restaurante{% endblock %}</title>
     <!-- Tailwind CSS (CDN) -->

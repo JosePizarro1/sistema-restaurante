@@ -44,6 +44,58 @@ def configuracion_view(request):
     return render(request, 'configuracion.html', {'configuracion': configuracion})
 
 
+def _ticket_data(orden):
+    """Builds the pre-comanda ticket JSON for a freshly created order.
+
+    Badges mirror the kitchen wording: menu lines show 'Entrada Táper' /
+    'Segundo Táper' per tapered component; packable plato lines show 'TÁPER';
+    mesa orders show none. `total` is the server-computed Decimal rendered as
+    a string so the 80mm printer receives exact cents (matches orden.total)."""
+    detalles = []
+    for det in orden.detalles.select_related('plato__categoria', 'menu').all():
+        badges = []
+        if det.menu_id:
+            nombre = det.menu.nombre
+            if det.entrada_para_llevar:
+                badges.append('Entrada Táper')
+            if det.segundo_para_llevar:
+                badges.append('Segundo Táper')
+        elif det.plato_id:
+            nombre = det.plato.nombre
+            if det.es_para_llevar and det.plato.categoria_id and det.plato.categoria.packable:
+                badges.append('TÁPER')
+        else:
+            nombre = ''
+        detalles.append(
+            {
+                'nombre': nombre,
+                'cantidad': det.cantidad,
+                'nota': det.nota,
+                'es_menu': det.menu_id is not None,
+                'es_para_llevar': det.es_para_llevar,
+                'entrada_para_llevar': det.entrada_para_llevar,
+                'segundo_para_llevar': det.segundo_para_llevar,
+                'badges': badges,
+            }
+        )
+
+    if orden.tipo_servicio == 'MESA' and orden.mesa_id:
+        numero = orden.mesa.numero
+        mesa_label = numero if str(numero).lower().startswith('mesa') else f'Mesa {numero}'
+    else:
+        mesa_label = 'PARA LLEVAR'
+
+    return {
+        'orden_id': orden.id,
+        'hora_str': timezone.localtime(orden.fecha_creacion).strftime('%H:%M'),
+        'tipo_servicio': orden.tipo_servicio,
+        'mesa_label': mesa_label,
+        'nota_general': orden.nota_general,
+        'detalles': detalles,
+        'total': str(orden.total),
+    }
+
+
 def process_image_to_base64(imagen_file):
     img = Image.open(imagen_file)
     if img.mode in ('RGBA', 'P'):
@@ -148,6 +200,13 @@ def pos_view(request):
         orden.save()
 
         trigger_pusher_event('nueva-orden', {'orden_id': orden.id})
+
+        # PRINT mode: the browser POSTs via fetch with X-Requested-With and
+        # expects ticket JSON to build the ESC/POS pre-comanda. The header is
+        # the only gate — KITCHEN mode never sends it (POS-PRINT-5), and a
+        # plain form POST keeps the current messages + redirect behavior.
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'ok', 'ticket': _ticket_data(orden)})
 
         messages.success(request, f'Orden #{orden.id} enviada a cocina con éxito!')
         return redirect('pos')

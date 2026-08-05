@@ -1,0 +1,21 @@
+{
+  "name": "RestoPOS - Sistema de Restaurante",
+  "short_name": "RestoPOS",
+  "description": "Sistema de gestión de restaurante: POS táctil, comanda en vivo y pre-comanda por impresión Bluetooth.",
+  "start_url": "/pos/",
+  "display": "standalone",
+  "background_color": "#F7F8FA",
+  "theme_color": "#F56B45",
+  "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

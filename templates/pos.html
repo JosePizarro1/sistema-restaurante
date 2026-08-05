@@ -543,6 +543,215 @@
     let notaGeneralActual = '';
     let mesaSeleccionadaId = null;
 
+    // ============================================================
+    // MÓDULO DE IMPRESIÓN DE PRE-COMANDA (Web Bluetooth, ESC/POS 80mm)
+    // Modo PRINT: enviarOrden* hace fetch → JSON del ticket → bytes
+    // ESC/POS → impresión Bluetooth → toast → redirect.
+    // La orden SIEMPRE queda creada en el servidor (fetch) antes de
+    // cualquier intento de impresión; un fallo de impresión NUNCA
+    // bloquea la orden (POS-PRINT-4).
+    // ============================================================
+    const MODO_ENVIO = '{{ configuracion.modo_envio }}';
+    let printingDevice = null;
+    let printingChar = null;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // ASCII sanitize para impresoras térmicas sin glifos UTF-8 (CP437):
+    // ñ→n, á→a, é→e, í→i, ó→o, ú→u (y mayúsculas); se descarta el resto.
+    function sanitizeText(text) {
+        const map = {
+            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ü': 'u',
+            'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U',
+            'ñ': 'n', 'Ñ': 'N'
+        };
+        return String(text || '')
+            .replace(/[^\x20-\x7E]/g, (ch) => map[ch] || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // Divide una línea en chunks de <= 32 caracteres, respetando palabras.
+    function wrap80(line) {
+        const maxLen = 32;
+        const words = String(line || '').split(' ');
+        const lines = [];
+        let current = '';
+        for (let word of words) {
+            if (word.length > maxLen) {
+                if (current) {
+                    lines.push(current);
+                    current = '';
+                }
+                while (word.length > maxLen) {
+                    lines.push(word.slice(0, maxLen));
+                    word = word.slice(maxLen);
+                }
+                current = word;
+                continue;
+            }
+            const candidate = current ? `${current} ${word}` : word;
+            if (candidate.length <= maxLen) {
+                current = candidate;
+            } else {
+                lines.push(current);
+                current = word;
+            }
+        }
+        if (current) lines.push(current);
+        return lines;
+    }
+
+    // Envía el formulario por fetch con el header X-Requested-With; el servidor
+    // crea la orden (misma validación), dispara Pusher y responde el ticket JSON.
+    async function fetchTicketData() {
+        const form = document.getElementById('form-orden');
+        const response = await fetch('/pos/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: new FormData(form)
+        });
+        if (!response.ok) {
+            throw new Error(`No se pudo enviar la orden (${response.status})`);
+        }
+        return response.json();
+    }
+
+    // Construye los bytes ESC/POS 80mm: init, negrita (ESC !), LF, feed, corte.
+    function buildEscPos(ticket) {
+        const bytes = [];
+        bytes.push(0x1B, 0x40); // init
+        const boldOn = () => bytes.push(0x1B, 0x21, 0x08);
+        const boldOff = () => bytes.push(0x1B, 0x21, 0x00);
+        const textLine = (text) => {
+            for (const line of wrap80(sanitizeText(text))) {
+                for (const ch of line) {
+                    bytes.push(ch.charCodeAt(0));
+                }
+                bytes.push(0x0A); // LF
+            }
+        };
+
+        boldOn();
+        textLine('SISTEMA RESTAURANTE');
+        boldOff();
+        textLine('PRE-COMANDA');
+        textLine('');
+        textLine(`ORDEN #${ticket.orden_id}   ${ticket.hora_str}`);
+        textLine(ticket.mesa_label);
+        if (ticket.nota_general) {
+            textLine('NOTA: ' + ticket.nota_general);
+        }
+        textLine('--------------------------------');
+        for (const det of ticket.detalles) {
+            textLine(`${det.cantidad} x ${det.nombre}`);
+            if (det.badges && det.badges.length > 0) {
+                textLine('  [' + det.badges.join(' | ') + ']');
+            }
+            if (det.nota) {
+                textLine('  NOTA: ' + det.nota);
+            }
+        }
+        textLine('--------------------------------');
+        textLine(`TOTAL: S/ ${ticket.total}`);
+        textLine('');
+        textLine('*** Gracias por su preferencia ***');
+        textLine('');
+        textLine('');
+        textLine('');
+        bytes.push(0x1D, 0x56, 0x42); // cut
+        return new Uint8Array(bytes);
+    }
+
+    // Escribe los bytes en la característica de escritura del dispositivo.
+    async function printBluetooth(bytes) {
+        if (!printingChar) {
+            throw new Error('Impresora no conectada');
+        }
+        if (printingChar.properties.write) {
+            await printingChar.writeValue(bytes);
+        } else if (printingChar.properties.writeWithoutResponse) {
+            await printingChar.writeValueWithoutResponse(bytes);
+        } else {
+            throw new Error('La impresora no acepta escritura');
+        }
+    }
+
+    // Conecta vía el picker de Chrome (se requiere HTTPS); mantiene el
+    // dispositivo durante la sesión y recuerda su nombre en localStorage.
+    async function connectPrinting() {
+        if (printingDevice && printingChar) {
+            return printingDevice;
+        }
+        if (!navigator.bluetooth) {
+            throw new Error('Web Bluetooth no disponible (requiere HTTPS)');
+        }
+        const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['0000ff00-0000-1000-8000-00805f9b34fb']
+        });
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService('0000ff00-0000-1000-8000-00805f9b34fb');
+        const characteristics = await service.getCharacteristics();
+        const characteristic = characteristics.find((c) => c.properties.write || c.properties.writeWithoutResponse) || characteristics[0];
+        if (!characteristic) {
+            throw new Error('La impresora no expone una característica de escritura');
+        }
+        printingDevice = device;
+        printingChar = characteristic;
+        try {
+            localStorage.setItem('impresora_bluetooth', device.name || '');
+        } catch (e) { /* almacenamiento no disponible */ }
+        return device;
+    }
+
+    // Flujo completo PRINT: la orden ya fue creada en el servidor por el fetch;
+    // la impresión es best-effort y nunca bloquea el redirect (POS-PRINT-4).
+    async function enviarOrdenPrint() {
+        try {
+            const ticket = await fetchTicketData();
+            const bytes = buildEscPos(ticket);
+            await connectPrinting();
+            await printBluetooth(bytes);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: `Orden #${ticket.orden_id} enviada`,
+                    text: 'Pre-comanda impresa correctamente.',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
+        } catch (err) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo imprimir la pre-comanda',
+                    text: (err && err.message) ? err.message : 'La orden ya fue enviada a cocina.',
+                    timer: 3500,
+                    showConfirmButton: false
+                });
+            }
+        }
+        window.location.href = '/pos/';
+    }
+
     function switchAmbiente(ambId, btnEl) {
         document.querySelectorAll('.ambiente-grid').forEach(g => g.classList.add('hidden'));
         const grid = document.getElementById(`ambiente-grid-${ambId}`);
@@ -930,6 +1139,10 @@
             return;
         }
         document.getElementById('items_json').value = JSON.stringify(carrito);
+        if (MODO_ENVIO === 'PRINT') {
+            enviarOrdenPrint();
+            return;
+        }
         document.getElementById('form-orden').submit();
     }
 
@@ -939,6 +1152,10 @@
             return;
         }
         document.getElementById('items_json').value = JSON.stringify(carrito);
+        if (MODO_ENVIO === 'PRINT') {
+            enviarOrdenPrint();
+            return;
+        }
         document.getElementById('form-orden').submit();
     }
 
