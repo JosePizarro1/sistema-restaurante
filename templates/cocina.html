@@ -196,7 +196,7 @@
         if (audioEnabled) {
             btn.className = "px-3.5 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer";
             icon.className = "ti ti-volume text-base text-white animate-bounce";
-            text.textContent = "Sonido Activado 🔔";
+            text.innerHTML = '<i class="ti ti-bell-ringing" aria-hidden="true"></i> Sonido Activado';
         } else {
             btn.className = "px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer";
             icon.className = "ti ti-volume-off text-base text-gray-400";

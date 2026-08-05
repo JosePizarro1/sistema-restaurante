@@ -69,19 +69,19 @@
         
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-amber-200/80 bg-amber-50/30 shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-center">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-800">📦 Recargo Tápers</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-800"><i class="ti ti-package" aria-hidden="true"></i> Recargo Tápers</span>
                 <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md">S/ {{ recargo_taper_unitario|floatformat:2 }} c/u</span>
             </div>
             <h3 class="text-2xl sm:text-3xl font-['Outfit'] font-bold text-amber-900 mt-2 mb-0">+S/ {{ monto_tapers|floatformat:2 }}</h3>
-            <span class="text-[11px] font-bold text-amber-800 mt-1">🥡 {{ total_tapers }} envases cobrados</span>
+            <span class="text-[11px] font-bold text-amber-800 mt-1"><i class="ti ti-box" aria-hidden="true"></i> {{ total_tapers }} envases cobrados</span>
         </div>
 
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-gray-400">🍽️ Servicio Mesa / Llevar</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-400"><i class="ti ti-utensils" aria-hidden="true"></i> Servicio Mesa / Llevar</span>
             <div class="flex items-baseline gap-2 mt-2">
                 <span class="text-lg font-bold text-blue-700">Mesa: S/ {{ ventas_mesa|floatformat:2 }}</span>
             </div>
-            <span class="text-[11px] font-bold text-gray-500 mt-1">🥡 Llevar: S/ {{ ventas_llevar|floatformat:2 }} ({{ conteo_llevar }} órdenes)</span>
+            <span class="text-[11px] font-bold text-gray-500 mt-1"><i class="ti ti-box" aria-hidden="true"></i> Llevar: S/ {{ ventas_llevar|floatformat:2 }} ({{ conteo_llevar }} órdenes)</span>
         </div>
 
         <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">

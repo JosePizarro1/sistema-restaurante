@@ -39,7 +39,7 @@
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
                             <div>
                                 <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 rounded-full text-xs font-bold border border-amber-200">
-                                    <span>🍽️ Paso 1 — Mapa Interactivo del Salón</span>
+                                    <span><i class="ti ti-utensils" aria-hidden="true"></i> Paso 1 — Mapa Interactivo del Salón</span>
                                 </div>
                                 <h2 class="text-xl lg:text-2xl font-extrabold text-[#15202B] font-['Outfit'] mt-1">Selecciona una Mesa en el Plano</h2>
                             </div>
@@ -47,7 +47,7 @@
                                     onclick="setServicioParaLlevar(this)"
                                     class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-0 shrink-0">
                                 <i class="ti ti-shopping-bag text-base"></i>
-                                <span>🥡 Pedido Para Llevar</span>
+                                <span><i class="ti ti-box" aria-hidden="true"></i> Pedido Para Llevar</span>
                             </button>
                         </div>
 
@@ -369,9 +369,9 @@
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-extrabold uppercase tracking-wide text-green-600 bg-green-50 px-2 py-0.5 rounded-md">¡Listo para Servir!</span>
                                 {% if orden.tipo_servicio == 'LLEVAR' or orden.total_tapers > 0 %}
-                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md border border-amber-200">🥡 PARA LLEVAR</span>
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md border border-amber-200"><i class="ti ti-box" aria-hidden="true"></i> PARA LLEVAR</span>
                                 {% else %}
-                                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md border border-blue-200">🍽️ EN MESA</span>
+                                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md border border-blue-200"><i class="ti ti-utensils" aria-hidden="true"></i> EN MESA</span>
                                 {% endif %}
                             </div>
                             <h3 class="text-2xl font-['Outfit'] font-bold text-[#15202B]">Orden #{{ orden.id }}</h3>
@@ -769,8 +769,8 @@
         setTipoServicio('LLEVAR');
         mesaSeleccionadaId = null;
         document.getElementById('input_mesa_id').value = '';
-        actualizarBadgeMesa('🥡 Para Llevar (Sin Mesa)');
-        mostrarPasoMenu('🥡 Pedido Para Llevar');
+        actualizarBadgeMesa('Para Llevar (Sin Mesa)');
+        mostrarPasoMenu('Pedido Para Llevar');
     }
 
     function seleccionarMesa(id, numero, ambienteNombre, estado) {
@@ -782,7 +782,7 @@
         const prefijoMesa = String(numero).toLowerCase().startsWith('mesa') ? '' : 'Mesa ';
         const textoFormateado = `${prefijoMesa}${numero}`;
 
-        actualizarBadgeMesa(`🍽️ ${textoFormateado} (${ambienteNombre})`);
+        actualizarBadgeMesa(`${textoFormateado} (${ambienteNombre})`);
 
         document.querySelectorAll('.mesa-card').forEach(c => c.classList.remove('ring-4', 'ring-primary-custom'));
         const btnMesa = document.getElementById(`btn-mesa-${id}`);
@@ -1053,18 +1053,18 @@
                     // Orden completa "Para Llevar": el servidor fuerza llevar en
                     // todos los ítems (views.pos_view), así que el toggle por
                     // ítem es redundante — se muestra un badge informativo.
-                    llevarButtonsHTML = `<span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border bg-amber-50 text-amber-800 border-amber-200">🥡 Para Llevar</span>`;
+                    llevarButtonsHTML = `<span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold border bg-amber-50 text-amber-800 border-amber-200"><i class="ti ti-box" aria-hidden="true"></i> Para Llevar</span>`;
                 } else if (esMenu) {
                     llevarButtonsHTML = `
                         <button type="button" 
                                 onclick="toggleEntradaItem(${idx})" 
                                 class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${item.entrada_para_llevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}">
-                            ${item.entrada_para_llevar ? '🥡 Entrada Llevar (+S/ 1)' : '🍽️ Entrada Mesa'}
+                            ${item.entrada_para_llevar ? '<i class="ti ti-box" aria-hidden="true"></i> Entrada Llevar (+S/ 1)' : '<i class="ti ti-utensils" aria-hidden="true"></i> Entrada Mesa'}
                         </button>
                         <button type="button" 
                                 onclick="toggleSegundoItem(${idx})" 
                                 class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${item.segundo_para_llevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}">
-                            ${item.segundo_para_llevar ? '🥡 Segundo Llevar (+S/ 1)' : '🍽️ Segundo Mesa'}
+                            ${item.segundo_para_llevar ? '<i class="ti ti-box" aria-hidden="true"></i> Segundo Llevar (+S/ 1)' : '<i class="ti ti-utensils" aria-hidden="true"></i> Segundo Mesa'}
                         </button>
                     `;
                 } else {
@@ -1073,7 +1073,7 @@
                                 onclick="toggleLlevarItem(${idx})" 
                                 class="px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all border ${esLlevar ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-500 border-gray-200 hover:text-black'}"
                                 title="Cambiar entre Mesa o Para Llevar este plato">
-                            ${esLlevar ? '🥡 Llevar (+S/ 1)' : '🍽️ Mesa'}
+                            ${esLlevar ? '<i class="ti ti-box" aria-hidden="true"></i> Llevar (+S/ 1)' : '<i class="ti ti-utensils" aria-hidden="true"></i> Mesa'}
                         </button>
                     `;
                 }
@@ -1259,20 +1259,20 @@
         if (btnEnt) {
             if (entradaParaLlevar) {
                 btnEnt.className = 'py-2.5 px-3 bg-amber-500 text-white rounded-xl font-bold text-xs border border-amber-600 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all';
-                btnEnt.innerHTML = '🥡 Entrada Llevar (+S/ 1.00)';
+                btnEnt.innerHTML = '<i class="ti ti-box" aria-hidden="true"></i> Entrada Llevar (+S/ 1.00)';
             } else {
                 btnEnt.className = 'py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all';
-                btnEnt.innerHTML = '🍽️ Entrada en Mesa';
+                btnEnt.innerHTML = '<i class="ti ti-utensils" aria-hidden="true"></i> Entrada en Mesa';
             }
         }
         const btnSeg = document.getElementById('btn-toggle-seg-llevar');
         if (btnSeg) {
             if (segundoParaLlevar) {
                 btnSeg.className = 'py-2.5 px-3 bg-amber-500 text-white rounded-xl font-bold text-xs border border-amber-600 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all';
-                btnSeg.innerHTML = '🥡 Segundo Llevar (+S/ 1.00)';
+                btnSeg.innerHTML = '<i class="ti ti-box" aria-hidden="true"></i> Segundo Llevar (+S/ 1.00)';
             } else {
                 btnSeg.className = 'py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all';
-                btnSeg.innerHTML = '🍽️ Segundo en Mesa';
+                btnSeg.innerHTML = '<i class="ti ti-utensils" aria-hidden="true"></i> Segundo en Mesa';
             }
         }
     }
@@ -1453,13 +1453,13 @@
                             id="btn-toggle-ent-llevar"
                             onclick="toggleEntradaLlevarModal()" 
                             class="py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
-                        🍽️ Entrada en Mesa
+                        <i class="ti ti-utensils" aria-hidden="true"></i> Entrada en Mesa
                     </button>
                     <button type="button" 
                             id="btn-toggle-seg-llevar"
                             onclick="toggleSegundoLlevarModal()" 
                             class="py-2.5 px-3 bg-white text-gray-600 rounded-xl font-bold text-xs border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
-                        🍽️ Segundo en Mesa
+                        <i class="ti ti-utensils" aria-hidden="true"></i> Segundo en Mesa
                     </button>
                 </div>
             </div>
