@@ -27,6 +27,23 @@ def superuser_required(view_func):
     return decorator(view_func)
 
 
+@superuser_required
+def configuracion_view(request):
+    """Superuser settings page: toggle the order delivery mode (KITCHEN screen
+    vs PRINT pre-comanda). Validates the choice; invalid values are rejected
+    with an error message and the stored field stays unchanged."""
+    configuracion = Configuracion.get()
+    if request.method == 'POST':
+        modo_envio = request.POST.get('modo_envio')
+        if modo_envio in dict(Configuracion.MODO_ENVIO_CHOICES):
+            configuracion.modo_envio = modo_envio
+            configuracion.save()
+            messages.success(request, f'Modo de envío actualizado a "{configuracion.get_modo_envio_display()}".')
+            return redirect('configuracion')
+        messages.error(request, 'Valor de modo de envío no válido.')
+    return render(request, 'configuracion.html', {'configuracion': configuracion})
+
+
 def process_image_to_base64(imagen_file):
     img = Image.open(imagen_file)
     if img.mode in ('RGBA', 'P'):

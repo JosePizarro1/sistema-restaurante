@@ -8,6 +8,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', views.reportes_view, name='reportes'),
     path('reportes/', views.reportes_view, name='reportes_alias'),
+    path('configuracion/', views.configuracion_view, name='configuracion'),
     path('pos/', views.pos_view, name='pos'),
     path('pos/cobrar/<int:orden_id>/', views.cobrar_orden, name='cobrar_orden'),
     path('cocina/', views.cocina_view, name='cocina'),

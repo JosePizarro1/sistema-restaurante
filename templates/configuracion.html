@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración - RestoPOS{% endblock %}
+{% block breadcrumb %}Configuración{% endblock %}
+{% block page_title %}Configuración del Sistema{% endblock %}
+
+{% block content %}
+<div class="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">
+            <h2 class="text-xl font-['Outfit'] font-bold text-[#15202B]">Modo de Envío de Comandas</h2>
+            <i class="ti ti-settings text-2xl text-gray-300"></i>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Modo de Envío -->
+            <div>
+                <label for="modo_envio" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+                    Destino de las nuevas órdenes
+                </label>
+                <select id="modo_envio" name="modo_envio"
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#15202B] focus:outline-none focus:border-primary-custom">
+                    {% for value, label in configuracion.MODO_ENVIO_CHOICES %}
+                    <option value="{{ value }}" {% if configuracion.modo_envio == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-[11px] text-gray-400 mt-1">
+                    <strong>Pantalla Cocina:</strong> las órdenes llegan a la pantalla de cocina (comportamiento actual).
+                    <strong>Impresión:</strong> al enviar una orden se imprime la pre-comanda en una impresora térmica 80mm vía Bluetooth (requiere HTTPS).
+                </p>
+            </div>
+
+            <!-- Recargo por Táper (informativo) -->
+            <div class="flex items-center gap-3 p-4 bg-amber-50/70 rounded-xl border border-amber-200/70">
+                <i class="ti ti-box text-xl text-amber-700"></i>
+                <div class="text-sm font-bold text-[#15202B]">
+                    Recargo por táper: S/ {{ configuracion.recargo_por_taper }}
+                    <p class="text-[11px] text-gray-500 font-medium mt-0.5">Este valor se edita desde el panel de administración de Django.</p>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+                <a href="{% url 'pos' %}" class="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold no-underline transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn-primary-custom px-6 py-3 rounded-xl text-sm font-bold shadow-md cursor-pointer border-0">
+                    Guardar Configuración
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

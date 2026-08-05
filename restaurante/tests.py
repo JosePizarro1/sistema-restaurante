@@ -171,6 +171,69 @@ class ConfiguracionModelTest(TestCase):
         Configuracion.get()
         self.assertEqual(Configuracion.objects.count(), 1)
 
+    def test_modo_envio_defaults_to_kitchen(self):
+        # APP-CONF-1: default KITCHEN keeps backward-compatible behavior.
+        cfg = Configuracion.get()
+        self.assertEqual(cfg.modo_envio, 'KITCHEN')
+
+    def test_modo_envio_persists_print(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        cfg.refresh_from_db()
+        self.assertEqual(cfg.modo_envio, 'PRINT')
+
+
+class ConfiguracionViewTest(TestCase):
+    """APP-CONF-2: superuser-only settings page toggling modo_envio with
+    validation and success/error messages."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_superuser(username='admin', password='password123')
+        self.mozo = User.objects.create_user(username='mozo', password='password123')
+        self.url = reverse('configuracion')
+
+    def test_get_renders_form_with_choices_for_superuser(self):
+        self.client.login(username='admin', password='password123')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="modo_envio"')
+        self.assertContains(response, 'value="KITCHEN"')
+        self.assertContains(response, 'value="PRINT"')
+
+    def test_post_valid_print_persists_and_redirects(self):
+        self.client.login(username='admin', password='password123')
+        response = self.client.post(self.url, {'modo_envio': 'PRINT'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Configuracion.get().modo_envio, 'PRINT')
+
+    def test_post_valid_kitchen_persists(self):
+        cfg = Configuracion.get()
+        cfg.modo_envio = 'PRINT'
+        cfg.save()
+        self.client.login(username='admin', password='password123')
+        response = self.client.post(self.url, {'modo_envio': 'KITCHEN'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Configuracion.get().modo_envio, 'KITCHEN')
+
+    def test_non_superuser_post_denied_no_mutation(self):
+        self.client.login(username='mozo', password='password123')
+        response = self.client.post(self.url, {'modo_envio': 'PRINT'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Configuracion.get().modo_envio, 'KITCHEN')
+
+    def test_unauthenticated_redirected_to_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_invalid_value_rejected_field_unchanged(self):
+        self.client.login(username='admin', password='password123')
+        response = self.client.post(self.url, {'modo_envio': 'FAX'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Configuracion.get().modo_envio, 'KITCHEN')
+
 
 class DetalleOrdenTaperTest(TestCase):
     def setUp(self):
@@ -839,10 +902,20 @@ class AdminRegistrationTest(TestCase):
         self.assertEqual(add_response.status_code, 403)
         # editing the existing singleton row persists
         change_url = reverse('admin:restaurante_configuracion_change', args=[cfg.id])
-        change_response = self.client.post(change_url, {'recargo_por_taper': '2.50'})
+        change_response = self.client.post(change_url, {'recargo_por_taper': '2.50', 'modo_envio': 'KITCHEN'})
         self.assertEqual(change_response.status_code, 302)
         cfg.refresh_from_db()
         self.assertEqual(cfg.recargo_por_taper, Decimal('2.50'))
+
+    def test_configuracion_modo_envio_admin_editable(self):
+        # APP-CONF-1 admin-editability: the admin change form exposes modo_envio
+        # and persists a new value.
+        cfg = Configuracion.get()
+        change_url = reverse('admin:restaurante_configuracion_change', args=[cfg.id])
+        change_response = self.client.post(change_url, {'recargo_por_taper': '1.00', 'modo_envio': 'PRINT'})
+        self.assertEqual(change_response.status_code, 302)
+        cfg.refresh_from_db()
+        self.assertEqual(cfg.modo_envio, 'PRINT')
 
 
 class AmbienteAndMesaTest(TestCase):

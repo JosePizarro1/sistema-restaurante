@@ -82,8 +82,8 @@ class MenuAdmin(admin.ModelAdmin):
 
 @admin.register(Configuracion)
 class ConfiguracionAdmin(admin.ModelAdmin):
-    list_display = ('recargo_por_taper',)
-    fields = ('recargo_por_taper',)
+    list_display = ('recargo_por_taper', 'modo_envio')
+    fields = ('recargo_por_taper', 'modo_envio')
 
     # Singleton: the row is created/updated by the seed (id=1); admins edit the
     # existing row in place but must not be able to add another one.

@@ -67,14 +67,21 @@ class Menu(models.Model):
 
 
 class Configuracion(models.Model):
+    # Delivery mode for new orders: kitchen screen (default, backward compatible)
+    # or 80mm pre-comanda printing via Web Bluetooth.
+    MODO_ENVIO_CHOICES = (
+        ('KITCHEN', 'Pantalla Cocina'),
+        ('PRINT', 'Impresión'),
+    )
     recargo_por_taper = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('1.00'))
+    modo_envio = models.CharField(max_length=10, choices=MODO_ENVIO_CHOICES, default='KITCHEN')
 
     class Meta:
         verbose_name = 'Configuración'
         verbose_name_plural = 'Configuración'
 
     def __str__(self):
-        return f'Configuración (recargo por taper: S/. {self.recargo_por_taper})'
+        return f'Configuración (recargo por taper: S/. {self.recargo_por_taper}, modo envío: {self.get_modo_envio_display()})'
 
     @classmethod
     def get(cls):
